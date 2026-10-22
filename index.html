@@ -125,8 +125,24 @@ textarea{resize:vertical;min-height:84px}
 .ot{display:flex;justify-content:space-between;font-weight:700;padding:8px 0}
 .empty{color:var(--muted);padding:40px 0;text-align:center}
 dialog{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:min(440px,92vw);padding:18px;max-height:88vh}
-#consD{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border:0;border-radius:0;overflow:auto;padding:max(18px,env(safe-area-inset-top)) 18px 24px}
+#consD,#accD{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border:0;border-radius:0;overflow:auto;padding:max(18px,env(safe-area-inset-top)) 18px 24px}
 textarea#cnt{min-height:96px}
+.acc-top{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.acc-box{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--surface)}
+.acc-box small{display:block;color:var(--muted)}
+.acc-box b{font-size:19px}
+.acc-card{width:100%;display:flex;align-items:center;gap:10px;text-align:start;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:8px}
+.acc-dot{width:14px;height:44px;border-radius:4px;flex:none}
+.acc-card .m{flex:1;min-width:0}
+.acc-card .m small{display:block;color:var(--muted)}
+.neg{color:#c0392b}.pos{color:var(--accent)}
+.ent{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:8px;background:var(--surface)}
+.ent .l1{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.ent .tg{font-size:13px;border-radius:4px;padding:1px 8px;font-weight:700}
+.tg.buy{background:#fbe3e0;color:#9b2c20}.tg.pay{background:#dcf3ef;color:#0f6b63}.tg.credit{background:#fdf0cf;color:#7a5a00}
+.ent .nt{color:var(--muted);font-size:14px}
+.ent .ac{display:flex;gap:8px;margin-top:8px}
+.ent .ac button{padding:4px 12px;font-size:14px}
 dialog::backdrop{background:rgba(0,0,0,.45)}
 dialog h2{margin:0 0 12px;font-size:19px}
 .li{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -158,6 +174,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
     <button class="mi" id="myBtn">طلباتي</button>
     <button class="mi" id="ordBtn" hidden>الطلبات<b id="ocnt" hidden></b></button>
     <button class="mi" id="consAdm" hidden>استشارات<b id="ccnt" hidden></b></button>
+    <button class="mi" id="accBtn" hidden>الحسابات</button>
     <button class="mi" id="addBtn" hidden>أضف منتج</button>
     <a class="mi" id="callBtn" href="tel:07700081081">اتصل بنا</a>
     <button class="mi" id="consBtn">احجز استشارة</button>
@@ -221,6 +238,27 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
   <div class="chips" id="ctabs"></div>
   <div id="clist"></div>
   <div class="row" style="margin-top:12px"><button class="btn ghost" data-close style="flex:1">إغلاق</button></div>
+</dialog>
+
+<dialog id="accD">
+  <div class="row" style="margin-bottom:10px"><h2 id="accT" style="margin:0;flex:1">الحسابات</h2><button class="btn ghost" id="accBack" data-accback hidden>رجوع</button><button class="btn ghost" data-close>إغلاق</button></div>
+  <input id="accQ" type="search" placeholder="ابحث: مادة، ملاحظة، مبلغ، تاريخ…" aria-label="بحث">
+  <div id="accSum"></div>
+  <div id="accList"></div>
+</dialog>
+
+<dialog id="entD">
+  <h2 id="entT">قيد جديد</h2>
+  <form id="entF">
+    <label for="ek">النوع</label>
+    <select id="ek"><option value="buy">شراء (يطلبني)</option><option value="pay">دفعة دفعتها</option><option value="credit">رصيد لي (مرتجع/اطلبه)</option></select>
+    <label for="ed">التاريخ</label><input id="ed" type="date" required>
+    <label for="ei">المادة / البيان</label><input id="ei" maxlength="200" placeholder="مثال: Nitoproof 10 ، 20 كغم">
+    <label for="eq">الكمية (اختياري)</label><input id="eq" type="number" min="0" step="any" inputmode="decimal">
+    <label for="ea">المبلغ (د.ع)</label><input id="ea" type="number" min="0" step="any" inputmode="decimal" required>
+    <label for="en">ملاحظة (اختياري)</label><input id="en" maxlength="500">
+    <div class="row" style="margin-top:16px"><button class="btn" style="flex:1">احفظ</button><button type="button" class="btn ghost" data-close>إلغاء</button></div>
+  </form>
 </dialog>
 
 <dialog id="aboutD">
@@ -511,6 +549,21 @@ $("consF").addEventListener("submit",function(e){
     $("consD").close();toast("وصلنا طلبك وراح نتواصل وياك قريباً",6000);
   });
 });
+$("accBtn").onclick=function(){menuShow(false);accV=-1;accQ="";accK="all";accArm=null;$("accQ").value="";$("accD").showModal();accRender();loadLedger()};
+$("accQ").addEventListener("input",function(){accQ=$("accQ").value;accArm=null;accRender()});
+$("entF").addEventListener("submit",function(e){
+  e.preventDefault();
+  var amt=parseFloat(digits($("ea").value)),qt=parseFloat(digits($("eq").value));
+  if(!(amt>=0)){toast("اكتب المبلغ");return}
+  var kind=$("ek").value;
+  if(kind=="buy"&&!$("ei").value.trim()){toast("اكتب اسم المادة المشتراة");return}
+  var d={brand:accAddB,kind:kind,day:$("ed").value||today(),item:$("ei").value.trim()||null,qty:isNaN(qt)?null:qt,amount:amt,note:$("en").value.trim()||null};
+  var q=accEdit?sb.from("ledger").update(d).eq("id",accEdit):sb.from("ledger").insert(d);
+  q.then(function(r){
+    if(r.error){toast(/relation|does not exist|schema cache/i.test(String(r.error.message||""))?"لازم تفعّل نظام الحسابات بقاعدة البيانات أولاً":"ما كدرنا نحفظ. تأكد إنك داخل كمالك.",5000);return}
+    $("entD").close();toast(accEdit?"تم حفظ التعديل":"تمت الإضافة");loadLedger();
+  });
+});
 $("aboutBtn").onclick=function(){menuShow(false);$("aboutD").showModal()};
 $("myBtn").onclick=function(){trackAll(true);myRender();$("myD").showModal()};
 $("tf").addEventListener("submit",function(e){
@@ -545,6 +598,60 @@ function notifyNew(){
   toast(msg,7000);beep();
   try{navigator.vibrate&&navigator.vibrate(200)}catch(e){}
   try{if(window.Notification&&Notification.permission=="granted")new Notification(TITLE,{body:msg})}catch(e){}
+}
+/* ---------- الحسابات ---------- */
+var ledger=[],accOk=true,accV=-1,accQ="",accK="all",accEdit=null,accArm=null,accAddB=-1;
+var KL={buy:"شراء",pay:"دفعة",credit:"رصيد لي"};
+function accBal(b){var r={buy:0,pay:0,credit:0};ledger.forEach(function(e){if(b<0||e.brand==b)r[e.kind]+=e.amount});r.bal=r.buy-r.pay-r.credit;return r}
+function balHtml(x,big){var t=x>0?'<span class="neg">يطلبني '+fmt(x)+'</span>':x<0?'<span class="pos">اطلبه '+fmt(-x)+'</span>':'<span>مصفّى</span>';return big?'<b>'+t+'</b>':t}
+function accMatch(e,q){
+  if(!q)return true;q=digits(q).toLowerCase().trim();
+  var h=[e.item,e.note,KL[e.kind],e.day,String(e.amount),BR[e.brand]?BR[e.brand].n:""].join(" ").toLowerCase();
+  return q.split(/\s+/).every(function(w){return h.indexOf(w)>-1});
+}
+function accRender(){
+  if(!$("accD").open&&!accRender.force)return;
+  $("accBack").hidden=accV<0;
+  $("accT").textContent=accV<0?"الحسابات":BR[accV].n;
+  if(!accOk){$("accSum").innerHTML="";$("accList").innerHTML='<div class="empty">لازم تفعّل نظام الحسابات بقاعدة البيانات أولاً (سكربت ledger.sql).</div>';return}
+  var sum="",list="";
+  if(accV<0){
+    var t=accBal(-1),pos=0,neg=0;
+    BR.forEach(function(x,i){var b=accBal(i).bal;if(b>0)pos+=b;else neg+=-b});
+    if(!accQ){
+      sum='<div class="acc-top"><div class="acc-box"><small>مجموع اللي يطلبوني</small><b class="neg">'+fmt(pos)+'</b></div><div class="acc-box"><small>مجموع اللي اطلبهم</small><b class="pos">'+fmt(neg)+'</b></div></div>';
+      list=ORD.map(function(i){var B=BR[i],r=accBal(i);
+        return '<button class="acc-card" data-accb="'+i+'"><span class="acc-dot" style="background:'+B.bg+'"></span><span class="m"><b>'+B.n+'</b><small>مشتريات '+fmt(r.buy)+' · مدفوع '+fmt(r.pay)+(r.credit?' · رصيد لي '+fmt(r.credit):'')+'</small></span>'+balHtml(r.bal,true)+'</button>'}).join("");
+    }else{
+      var res=ledger.filter(function(e){return accMatch(e,accQ)});
+      list=res.length?res.map(entHtml).join(""):'<div class="empty">ما أكو نتائج.</div>';
+    }
+  }else{
+    var r=accBal(accV);
+    sum='<div class="acc-top"><div class="acc-box"><small>مشتريات</small><b>'+fmt(r.buy)+'</b></div><div class="acc-box"><small>مدفوع</small><b>'+fmt(r.pay)+'</b></div><div class="acc-box"><small>رصيد لي (مرتجع)</small><b>'+fmt(r.credit)+'</b></div><div class="acc-box"><small>الصافي</small>'+balHtml(r.bal,true)+'</div></div>'+
+      '<div class="row" style="flex-wrap:wrap;margin-bottom:8px"><button class="btn" data-aadd="buy" style="flex:1">+ شراء</button><button class="btn" data-aadd="pay" style="flex:1">+ دفعة</button><button class="btn ghost" data-aadd="credit" style="flex:1">+ رصيد لي</button></div>'+
+      '<div class="chips" style="margin-bottom:8px">'+[["all","الكل"],["buy","شراء"],["pay","دفعات"],["credit","رصيد لي"]].map(function(k){return '<button class="chip" aria-pressed="'+(accK==k[0])+'" data-ak="'+k[0]+'">'+k[1]+'</button>'}).join("")+'</div>';
+    var res2=ledger.filter(function(e){return e.brand==accV&&(accK=="all"||e.kind==accK)&&accMatch(e,accQ)});
+    list=res2.length?res2.map(entHtml).join(""):'<div class="empty">ما أكو قيود'+(accQ?" مطابقة":" بعد")+'.</div>';
+  }
+  $("accSum").innerHTML=sum;$("accList").innerHTML=list;
+}
+function entHtml(e){
+  var d=new Date(e.day+"T00:00:00").toLocaleDateString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric"});
+  return '<div class="ent"><div class="l1"><span><span class="tg '+e.kind+'">'+KL[e.kind]+'</span> '+(accV<0?'<b>'+BR[e.brand].n+'</b> · ':'')+esc(e.item||"")+(e.qty?' × '+e.qty:'')+'</span><b>'+fmt(e.amount)+'</b></div><div class="nt">'+d+(e.note?' · '+esc(e.note):'')+'</div><div class="ac"><button class="btn ghost" data-aed="'+e.id+'">تعديل</button><button class="btn danger" data-adel="'+e.id+'">'+(accArm==e.id?"اضغط للتأكيد":"حذف")+'</button></div></div>';
+}
+function loadLedger(){
+  return sb.from("ledger").select("*").order("day",{ascending:false}).order("id",{ascending:false}).limit(2000).then(function(r){
+    if(r.error){accOk=!/relation|does not exist|schema cache/i.test(String(r.error.message||""));ledger=[];accRender();return}
+    accOk=true;ledger=r.data.map(function(x){return {id:x.id,brand:Number(x.brand),kind:x.kind,day:x.day,item:x.item||"",qty:x.qty==null?null:Number(x.qty),amount:Number(x.amount),note:x.note||""}});accRender();
+  });
+}
+function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function accOpenEntry(kind,e){
+  accEdit=e?e.id:null;accAddB=e?e.brand:accV;
+  $("entT").textContent=e?"تعديل قيد":"قيد جديد · "+BR[accAddB].n;
+  $("ek").value=e?e.kind:kind;$("ed").value=e?e.day:today();$("ei").value=e?e.item:"";$("eq").value=e&&e.qty!=null?e.qty:"";$("ea").value=e?e.amount:"";$("en").value=e?e.note:"";
+  $("entD").showModal();
 }
 var ordNew=0,consNew=0,cons=[],ctab="new",consCh=null,cArm=null;
 function updDot(){$("mdot").hidden=!(ordNew||consNew)}
@@ -716,7 +823,8 @@ $("ordBtn").onclick=function(){
 };
 function setAdmin(session){
   var was=isAdmin;isAdmin=!!session;
-  $("addBtn").hidden=!isAdmin;$("ordBtn").hidden=!isAdmin;$("consAdm").hidden=!isAdmin;
+  $("addBtn").hidden=!isAdmin;$("ordBtn").hidden=!isAdmin;$("consAdm").hidden=!isAdmin;$("accBtn").hidden=!isAdmin;
+  if(!isAdmin){ledger=[];if($("accD").open)$("accD").close()}
   if(isAdmin&&!consCh){
     loadCons();
     consCh=sb.channel("cons-feed").on("postgres_changes",{event:"*",schema:"public",table:"consultations"},function(p){if(p.eventType=="INSERT"){toast("طلب استشارة جديد",6000);beep()}loadCons()}).subscribe();
@@ -757,6 +865,12 @@ document.addEventListener("click",function(e){
   else if(d.invo){invoicePdf(d.invo,true)}
   else if(d.invs){invoicePdf(d.invs,true,true)}
   else if(d.wasend!==undefined){waOrder()}
+  else if(d.accb!==undefined){accV=+d.accb;accK="all";accQ="";$("accQ").value="";accArm=null;accRender();$("accD").scrollTo(0,0)}
+  else if(d.accback!==undefined){accV=-1;accQ="";$("accQ").value="";accArm=null;accRender()}
+  else if(d.ak){accK=d.ak;accRender()}
+  else if(d.aadd){accOpenEntry(d.aadd,null)}
+  else if(d.aed){var ae=ledger.filter(function(x){return x.id==d.aed})[0];if(ae)accOpenEntry(ae.kind,ae)}
+  else if(d.adel){if(accArm!=d.adel){accArm=d.adel;accRender();return}sb.from("ledger").delete().eq("id",d.adel).then(function(r){accArm=null;r.error?toast("ما كدرنا نحذف"):(toast("تم الحذف"),loadLedger())})}
   else if(d.ck){ctab=d.ck;cArm=null;consRender()}
   else if(d.cst){var cq=d.cst.split("|");sb.from("consultations").update({status:cq[1]}).eq("id",cq[0]).then(function(r){r.error?toast("ما كدرنا نحدّث الحالة"):loadCons()})}
   else if(d.cdel){if(cArm!=d.cdel){cArm=d.cdel;consRender();return}sb.from("consultations").delete().eq("id",d.cdel).then(function(r){cArm=null;r.error?toast("ما كدرنا نحذف"):(toast("تم الحذف"),loadCons())})}
