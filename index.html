@@ -176,6 +176,7 @@ var SUPABASE_KEY="sb_publishable_jk8dC0HN2CsxLh2c0Kp-xg_JLxk5Wfg";
 var BR=[{n:"Fosroc",bg:"#d42027",fg:"#fff",bd:"#d42027"},{n:"Sika",bg:"#f2b705",fg:"#1b1b1b",bd:"#f2b705"},{n:"Mapei",bg:"#6ec1ee",fg:"#0a2a3d",bd:"#6ec1ee"},{n:"Weber",bg:"#ffd400",fg:"#111",bd:"#111"},{n:"DCP",bg:"#f26a1b",fg:"#fff",bd:"#f26a1b"}];
 var CATS=["مواد عزل","لواصق","بيتومين","إيبوكسيات","مواد زرع شيش","Terraco"];
 function catsOf(b){var a=[0,1,2,3,4];if(b==0)a.push(5);return a}
+var ORD=[0,5,1,2,3,4];
 var CUR="د.ع",TITLE=document.title;
 var sb=null,configured=SUPABASE_URL.indexOf("PASTE")<0&&SUPABASE_KEY.indexOf("PASTE")<0;
 if(configured){try{sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){sb=null}}
@@ -200,7 +201,7 @@ function mk(b,tag){var B=BR[b];return '<'+tag+' class="mark" style="background:'
 function status(){return failed?failed:(!loaded?"جاري تحميل المنتجات…":"")}
 function home(){
   var n=all(),h='<p class="lead">'+(status()||(n.length?"اختر البراند، أو ادخل مباشرة على القسم اللي تبيه.":"ما أكو منتجات بعد."+(isAdmin?" اضغط «أضف منتج» وابدأ.":"")))+'</p><div class="brands">';
-  BR.forEach(function(B,i){
+  ORD.forEach(function(i){var B=BR[i];
     var cnt=n.filter(function(p){return p.b==i}).length;
     h+='<section class="brand">'+mk(i,"button")+'<div class="bb"><p>'+cnt+' منتج</p><div class="cl">'+
     catsOf(i).map(function(k){return '<button data-bc="'+i+','+k+'">'+CATS[k]+'</button>'}).join("")+'</div></div></section>';
@@ -434,7 +435,7 @@ document.addEventListener("click",function(e){
 });
 $("cartBtn").onclick=function(){lines();$("cartD").showModal()};
 $("addBtn").onclick=function(){openForm(null)};
-$("b").innerHTML=BR.map(function(b,i){return '<option value="'+i+'">'+b.n+'</option>'}).join("");
+$("b").innerHTML=ORD.map(function(i){return '<option value="'+i+'">'+BR[i].n+'</option>'}).join("");
 function fillCats(){var cur=$("c").value;$("c").innerHTML=catsOf(+$("b").value).map(function(i){return '<option value="'+i+'">'+CATS[i]+'</option>'}).join("");if(cur&&catsOf(+$("b").value).indexOf(+cur)>-1)$("c").value=cur}
 fillCats();$("b").addEventListener("change",fillCats);
 
