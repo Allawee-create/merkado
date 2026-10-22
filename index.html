@@ -4,23 +4,25 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ميركادو</title>
-<meta name="theme-color" content="#0f6b6b">
+<meta name="theme-color" content="#0F1A21">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#eceff0;--surface:#fff;--ink:#1b2a33;--muted:#5d6d76;--line:#cfd6d9;--accent:#0f6b6b;--accent-ink:#fff;--tag:#e0a526;--tag-ink:#2b1f00;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12191d;--surface:#1b252b;--ink:#e8eef0;--muted:#9aaab2;--line:#2f3d45;--accent:#3cb4b0;--accent-ink:#06191a;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#12191d;--surface:#1b252b;--ink:#e8eef0;--muted:#9aaab2;--line:#2f3d45;--accent:#3cb4b0;--accent-ink:#06191a;color-scheme:dark}
+:root{--bg:#E8ECEB;--surface:#fff;--ink:#0F1A21;--muted:#566771;--line:#cbd3d6;--accent:#1F8E85;--accent-ink:#fff;--tag:#F0B429;--tag-ink:#0F1A21;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1A21;--surface:#18252E;--ink:#E8ECEB;--muted:#8DA0AB;--line:#243642;--accent:#3AB5AA;--accent-ink:#0F1A21;--tag:#F0B429;--tag-ink:#0F1A21;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1A21;--surface:#18252E;--ink:#E8ECEB;--muted:#8DA0AB;--line:#243642;--accent:#3AB5AA;--accent-ink:#0F1A21;--tag:#F0B429;--tag-ink:#0F1A21;color-scheme:dark}
 *{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",Tahoma,Arial,sans-serif;line-height:1.6}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Tajawal",Tahoma,Arial,sans-serif;line-height:1.6}
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 16px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
 .row{display:flex;gap:10px;align-items:center}
-h1{font-size:22px;margin:0;flex:1;font-weight:700;cursor:pointer}
+h1{font-size:26px;margin:0;flex:1;font-weight:800;cursor:pointer;font-family:"Cairo",Tahoma,sans-serif;display:flex;align-items:center;gap:10px;line-height:1}
+h1 svg{flex:none}
+.cb h3,dialog h2{font-family:"Cairo",Tahoma,sans-serif}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
@@ -97,7 +99,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
 <body>
 <header>
   <div class="row">
-    <h1 id="home">ميركادو</h1>
+    <h1 id="home"><svg aria-hidden="true" viewBox="0 0 120 126" width="34" height="36"><path d="M60 4C60 4 49 15 49 21a11 11 0 0 0 22 0C71 15 60 4 60 4Z" fill="#F0B429"/><path d="M8 66C8 46 30 34 60 34C90 34 112 46 112 66Q98 58 86 66Q73 58 60 66Q47 58 34 66Q21 58 8 66Z" fill="var(--accent)"/><path d="M26 118V80L60 104L94 80V118" fill="none" stroke="var(--ink)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg><span>ميركادو</span></h1>
     <button class="btn ghost" id="ordBtn" hidden>الطلبات<b id="ocnt" hidden></b></button>
     <button class="btn ghost" id="addBtn" hidden>أضف منتج</button>
     <button class="btn ghost" id="myBtn">طلباتي</button>
