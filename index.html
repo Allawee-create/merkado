@@ -328,7 +328,7 @@ function brand(){
   var B=BR[S.b];
   var cl=catsOf(S.b).filter(function(c){return isAdmin||!catsOk||products.some(function(p){return p.b==S.b&&p.c==c.id})});
   if(S.c!=-1&&!cl.some(function(c){return c.id==S.c}))S.c=-1;
-  var h='<div class="bar"><button class="btn ghost" data-home>كل البراندات</button>'+mk(S.b,"div")+'</div>';
+  var h='<div class="bar"><button class="btn ghost" data-home>الصفحة الرئيسية</button>'+mk(S.b,"div")+'</div>';
   if(isAdmin){var cn=S.c!=-1?catName(S.c,S.b):"";h+='<div class="row" style="margin-bottom:10px;flex-wrap:wrap"><button class="btn" data-addhere style="flex:1">+ أضف مادة'+(cn?' بقسم «'+esc(cn)+'»':'')+'</button>'+(catsOk?'<button class="btn ghost" data-cats>إدارة الأقسام</button>':'')+'</div>'}
   h+='<input id="q" type="search" placeholder="ابحث داخل '+B.n+'…" aria-label="بحث" value="'+esc(S.q)+'"><div class="chips" style="margin-top:10px">';
   h+='<button class="chip" aria-pressed="'+(S.c==-1)+'" data-c="-1">الكل</button>';
