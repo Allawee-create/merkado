@@ -167,7 +167,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
 <dialog id="myD">
   <h2>طلباتي</h2>
   <form class="trackf" id="tf">
-    <input id="tc" inputmode="numeric" placeholder="رقم الطلب" aria-label="رقم الطلب" required>
+    <input id="tc" inputmode="numeric" placeholder="رقم الفاتورة" aria-label="رقم الفاتورة" required>
     <input id="tp" type="tel" inputmode="tel" placeholder="رقم هاتفك" aria-label="رقم الهاتف" required>
     <button class="btn">تتبّع</button>
   </form>
@@ -370,7 +370,7 @@ $("cf").addEventListener("submit",function(e){
   });
 });
 function showDone(o,ph){
-  $("doneB").innerHTML='<p><b class="badge b-new">'+MST.new+'</b></p><div class="codebig">'+esc(o.code)+'</div><p class="on" style="text-align:center">رقم طلبك. احتفظ فيه.</p>'+itemsHtml(o.items)+'<div class="ot"><span>الإجمالي</span><span>'+fmt(o.total)+'</span></div><p class="on">راح نتواصل وياك على '+esc(ph)+' حتى نأكد الطلب. تكدر تتابع حالته من زر «طلباتي».</p>';
+  $("doneB").innerHTML='<p><b class="badge b-new">'+MST.new+'</b></p><div class="codebig">'+esc(o.code)+'</div><p class="on" style="text-align:center">رقم الفاتورة. احتفظ فيه لمتابعة طلبك.</p>'+itemsHtml(o.items)+'<div class="ot"><span>الإجمالي</span><span>'+fmt(o.total)+'</span></div><p class="on">راح نتواصل وياك على '+esc(ph)+' حتى نأكد الطلب. تكدر تتابع حالته من زر «طلباتي».</p>';
   $("doneD").showModal();
 }
 function totHtml(o){var d=Number(o.discount||0);return d>0?'<div class="ot"><span>الإجمالي</span><span>'+fmt(o.total)+'</span></div><div class="ot disc"><span>الخصم</span><span>− '+fmt(d)+'</span></div><div class="ot"><span>المطلوب</span><span>'+fmt(Math.max(0,o.total-d))+'</span></div>':'<div class="ot"><span>الإجمالي</span><span>'+fmt(o.total)+'</span></div>'}
@@ -379,7 +379,7 @@ function myRender(){
   var list=mine.slice().sort(function(x,y){return y.t-x.t});
   $("myL").innerHTML=list.length?list.map(function(o){
     var d=new Date(o.t).toLocaleString("en-GB",{dateStyle:"short",timeStyle:"short"});
-    return '<div class="ord"><div class="oh"><b class="badge b-'+o.status+'">'+(MST[o.status]||o.status)+'</b><span>#'+esc(o.code)+' · '+d+'</span></div>'+trk(o.status)+itemsHtml(o.items)+totHtml(o)+'</div>'
+    return '<div class="ord"><div class="oh"><b class="badge b-'+o.status+'">'+(MST[o.status]||o.status)+'</b><span>فاتورة #'+esc(o.code)+' · '+d+'</span></div>'+trk(o.status)+itemsHtml(o.items)+totHtml(o)+'</div>'
   }).join(""):'<div class="empty">ما عندك طلبات بعد. إذا عندك رقم طلب اكتبه فوق مع رقم هاتفك.</div>';
 }
 function trackAll(first){
@@ -445,7 +445,7 @@ function ordersRender(){
             o.status=="confirmed"?ab("delivered","تم التسليم","btn")+ab("cancelled","إلغاء"):
             o.status=="delivered"?ab("confirmed","رجّعه لقيد التجهيز"):ab("new","رجّعه لجديد");
     act=act.split("ID|").join(o.id+"|");
-    return '<div class="ord"><div class="oh"><b>'+esc(o.name)+'</b><span>#'+esc(o.code)+' · '+d+'</span></div><div><a href="tel:'+esc(String(o.phone).replace(/[^0-9+]/g,""))+'">'+esc(o.phone)+'</a></div>'+itemsHtml(o.items)+(o.note?'<div class="on">'+esc(o.note)+'</div>':'')+totHtml(o)+((o.status=="new"||o.status=="confirmed")?'<div class="dsc"><span>خصم</span><input type="number" min="0" step="any" inputmode="decimal" id="dv-'+o.id+'" placeholder="0" aria-label="قيمة الخصم"'+(o.discount>0?' value="'+o.discount+'"':'')+'><select id="dt-'+o.id+'" aria-label="نوع الخصم"><option value="a">د.ع</option><option value="p">%</option></select><button class="btn ghost" data-od="'+o.id+'">طبّق</button></div>':'')+'<div class="row">'+act+'</div></div>'
+    return '<div class="ord"><div class="oh"><b>'+esc(o.name)+'</b><span>فاتورة #'+esc(o.code)+' · '+d+'</span></div><div><a href="tel:'+esc(String(o.phone).replace(/[^0-9+]/g,""))+'">'+esc(o.phone)+'</a></div>'+itemsHtml(o.items)+(o.note?'<div class="on">'+esc(o.note)+'</div>':'')+totHtml(o)+((o.status=="new"||o.status=="confirmed")?'<div class="dsc"><span>خصم</span><input type="number" min="0" step="any" inputmode="decimal" id="dv-'+o.id+'" placeholder="0" aria-label="قيمة الخصم"'+(o.discount>0?' value="'+o.discount+'"':'')+'><select id="dt-'+o.id+'" aria-label="نوع الخصم"><option value="a">د.ع</option><option value="p">%</option></select><button class="btn ghost" data-od="'+o.id+'">طبّق</button></div>':'')+'<div class="row">'+act+'</div></div>'
   }).join(""):'<div class="empty">ما أكو طلبات '+ST[otab]+'.</div>';
 }
 function loadOrders(){
