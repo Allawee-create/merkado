@@ -47,6 +47,10 @@ main{max-width:1000px;margin:0 auto;padding:16px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:12px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:4px;overflow:hidden;display:flex;flex-direction:column}
 .sw{height:12px}
+.pic{background:#fff;height:150px;display:flex;align-items:center;justify-content:center;border-bottom:4px solid var(--line)}
+.pic img{max-width:100%;max-height:100%;object-fit:contain}
+#imgbox{display:flex;align-items:center;gap:10px;margin-top:6px}
+#imgprev{width:84px;height:84px;object-fit:contain;background:#fff;border-radius:4px;border:1px solid var(--line)}
 .cb{padding:12px;display:flex;flex-direction:column;gap:4px;flex:1}
 .cb h3{margin:0;font-size:16px}
 .cb small{color:var(--muted)}
@@ -144,6 +148,8 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
     <label for="n">اسم المنتج</label><input id="n" maxlength="120" required>
     <label for="p">سعر البيع (د.ع)</label><input id="p" type="number" min="0" step="any" inputmode="decimal" required>
     <label for="u">الوحدة</label><input id="u" maxlength="40" placeholder="مثال: 20 كجم، خرطوشة، جالون" required>
+    <label for="imgf">صورة المنتج (اختياري)</label>
+    <div id="imgbox"><img id="imgprev" alt="" hidden><div><input id="imgf" type="file" accept="image/*"><button type="button" class="btn ghost" id="imgx" hidden style="margin-top:6px">إزالة الصورة</button></div></div>
     <label for="b">البراند</label><select id="b"></select>
     <label for="c">القسم</label><select id="c"></select>
     <div class="row" style="margin-top:16px"><button class="btn" style="flex:1">احفظ المنتج</button><button type="button" class="btn ghost" data-close>إلغاء</button></div>
@@ -226,7 +232,7 @@ function grid(){
   $("empty").hidden=list.length>0;
   $("grid").innerHTML=list.map(function(p){
     var q=cart[p.id];
-    return '<article class="card"><div class="sw" style="background:'+B.bg+';border-bottom:4px solid '+B.bd+'"></div><div class="cb"><h3>'+esc(p.n)+'</h3><small>'+B.n+' — '+CATS[p.c]+'</small><div class="price"><span>'+fmt(p.p)+' <small>/ '+esc(p.u)+'</small></span><span class="acts">'+
+    return '<article class="card">'+(p.img?'<div class="pic" style="border-top:6px solid '+B.bg+'"><img src="'+esc(p.img)+'" alt="'+esc(p.n)+'" loading="lazy"></div>':'<div class="sw" style="background:'+B.bg+';border-bottom:4px solid '+B.bd+'"></div>')+'<div class="cb"><h3>'+esc(p.n)+'</h3><small>'+B.n+' — '+CATS[p.c]+'</small><div class="price"><span>'+fmt(p.p)+' <small>/ '+esc(p.u)+'</small></span><span class="acts">'+
     (q?'<span class="step"><button data-m="'+p.id+'" aria-label="نقص">−</button><b>'+q+'</b><button data-p="'+p.id+'" aria-label="زِد">+</button></span>':'<button class="btn" data-add="'+p.id+'">أضف</button>')+
     (isAdmin?'<button class="btn ghost" data-edit="'+p.id+'">تعديل</button>':'')+'</span></div></div></article>'
   }).join("");
@@ -247,12 +253,32 @@ function refresh(){count();lines();saveCart();if(S.b>=0&&$("grid"))grid()}
 function itemsHtml(items){return (items||[]).map(function(i){return '<div class="oi"><span>'+esc(i.n)+' ('+(BR[i.b]?BR[i.b].n:"")+') × '+i.q+'</span><span>'+fmt(i.p*i.q)+'</span></div>'}).join("")}
 
 /* ---------- المنتجات (قاعدة البيانات) ---------- */
-function mapP(r){return {id:r.id,n:r.name,p:Number(r.price),u:r.unit,b:r.brand,c:r.cat}}
+function mapP(r){return {id:r.id,n:r.name,p:Number(r.price),u:r.unit,b:r.brand,c:r.cat,img:r.image||""}}
 function loadProducts(){
   return sb.from("products").select("*").order("created_at",{ascending:false}).then(function(r){
     if(r.error){failed="تعذر تحميل المنتجات. حدّث الصفحة.";render(true);return}
     products=r.data.map(mapP);loaded=true;failed="";
     S.b<0?home():grid();lines();count();
+  });
+}
+var imgState={url:"",file:null};
+function showPrev(){var src=imgState.file?URL.createObjectURL(imgState.file):imgState.url;$("imgprev").hidden=!src;if(src)$("imgprev").src=src;$("imgx").hidden=!src}
+$("imgf").addEventListener("change",function(e){imgState.file=e.target.files[0]||null;showPrev()});
+$("imgx").onclick=function(){imgState.file=null;imgState.url="";$("imgf").value="";showPrev()};
+function shrink(file){return new Promise(function(res,rej){
+  var im=new Image(),u=URL.createObjectURL(file);
+  im.onload=function(){var m=900,k=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement("canvas");
+    c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+    var x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
+    c.toBlob(function(b){b?res(b):rej()},"image/jpeg",.82)};
+  im.onerror=rej;im.src=u})}
+function uploadImg(file){
+  return shrink(file).then(function(blob){
+    var name=Date.now().toString(36)+Math.random().toString(36).slice(2,7)+".jpg";
+    return sb.storage.from("product-images").upload(name,blob,{contentType:"image/jpeg",cacheControl:"31536000"}).then(function(r){
+      if(r.error)throw r.error;
+      return sb.storage.from("product-images").getPublicUrl(name).data.publicUrl;
+    });
   });
 }
 function openForm(p){
@@ -261,6 +287,7 @@ function openForm(p){
   $("n").value=p?p.n:"";$("p").value=p?p.p:"";$("u").value=p?p.u:"";
   $("b").value=p?p.b:(S.b>=0?S.b:0);$("c").value=p?p.c:(S.c>=0?S.c:0);
   $("del").hidden=!p;$("del").textContent="حذف المنتج";
+  imgState.url=p?p.img:"";imgState.file=null;$("imgf").value="";showPrev();
   $("addD").showModal();
 }
 function openEdit(id){var p=all().filter(function(x){return x.id==id})[0];if(p)openForm(p)}
@@ -274,11 +301,16 @@ function doDelete(){
 $("f").addEventListener("submit",function(e){
   e.preventDefault();
   var d={name:$("n").value.trim(),price:+$("p").value,unit:$("u").value.trim(),brand:+$("b").value,cat:+$("c").value};
-  var q=editing?sb.from("products").update(d).eq("id",editing):sb.from("products").insert(d);
-  q.then(function(r){
-    if(r.error){toast("ما كدرنا نحفظ. تأكد إنك داخل بحساب المالك.");return}
+  var orig=editing?(all().filter(function(x){return x.id==editing})[0]||{}):{};
+  var up=imgState.file?uploadImg(imgState.file):Promise.resolve(imgState.url);
+  up.then(function(url){
+    if(url||orig.img)d.image=url||null;
+    var q=editing?sb.from("products").update(d).eq("id",editing):sb.from("products").insert(d);
+    return q;
+  }).then(function(r){
+    if(r.error){toast(String(r.error.message||"").indexOf("image")>-1?"لازم تفعّل ميزة الصور بقاعدة البيانات أولاً":"ما كدرنا نحفظ. تأكد إنك داخل بحساب المالك.");return}
     var was=editing;$("addD").close();toast(was?"تم حفظ التعديل":"تمت إضافة المنتج");loadProducts();
-  });
+  }).catch(function(){toast("ما كدرنا نرفع الصورة. جرّب صورة ثانية.")});
 });
 
 /* ---------- طلب الزبون (بدون حساب) ---------- */
