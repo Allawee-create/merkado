@@ -22,6 +22,14 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .row{display:flex;gap:10px;align-items:center}
 h1{font-size:26px;margin:0;flex:1;font-weight:800;cursor:pointer;font-family:"Cairo",Tahoma,sans-serif;display:flex;align-items:center;gap:10px;line-height:1}
 h1 svg{flex:none}
+.menubtn{position:relative;padding:9px 11px;display:flex;align-items:center}
+#mdot{position:absolute;top:5px;inset-inline-start:5px;width:10px;height:10px;border-radius:50%;background:var(--tag);border:2px solid var(--bg)}
+#menu{position:absolute;left:16px;top:calc(100% - 4px);min-width:190px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);padding:6px;display:flex;flex-direction:column;gap:2px;z-index:20}
+#menu[hidden]{display:none}
+.mi{background:none;border:0;text-align:start;padding:12px 14px;border-radius:6px;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mi[hidden]{display:none}
+.mi:hover,.mi:focus-visible{background:var(--bg)}
+.mi b{background:var(--tag);color:var(--tag-ink);border-radius:10px;padding:0 7px;font-size:13px}
 .hero{display:flex;align-items:center;justify-content:center;gap:clamp(14px,4vw,32px);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:clamp(20px,5vw,40px) 16px;margin-bottom:18px}
 .hero svg{width:clamp(70px,20vw,130px);height:auto;flex:none}
 .ht{display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -106,10 +114,13 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
 <header>
   <div class="row">
     <h1 id="home"><svg aria-hidden="true" viewBox="0 0 120 126" width="34" height="36"><path d="M60 4C60 4 49 15 49 21a11 11 0 0 0 22 0C71 15 60 4 60 4Z" fill="#F0B429"/><path d="M8 66C8 46 30 34 60 34C90 34 112 46 112 66Q98 58 86 66Q73 58 60 66Q47 58 34 66Q21 58 8 66Z" fill="var(--accent)"/><path d="M26 118V80L60 104L94 80V118" fill="none" stroke="var(--ink)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg><span>ميركادو</span></h1>
-    <button class="btn ghost" id="ordBtn" hidden>الطلبات<b id="ocnt" hidden></b></button>
-    <button class="btn ghost" id="addBtn" hidden>أضف منتج</button>
-    <button class="btn ghost" id="myBtn">طلباتي</button>
     <button class="btn cartbtn" id="cartBtn">السلة<b id="cnt">0</b></button>
+    <button class="btn ghost menubtn" id="menuBtn" aria-label="القائمة" aria-expanded="false" aria-controls="menu"><svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><i id="mdot" hidden></i></button>
+  </div>
+  <div id="menu" hidden>
+    <button class="mi" id="myBtn">طلباتي</button>
+    <button class="mi" id="ordBtn" hidden>الطلبات<b id="ocnt" hidden></b></button>
+    <button class="mi" id="addBtn" hidden>أضف منتج</button>
   </div>
 </header>
 <main id="main"></main>
@@ -366,6 +377,11 @@ function trackAll(first){
     mine=arr;myRender();
   });
 }
+function menuShow(v){$("menu").hidden=!v;$("menuBtn").setAttribute("aria-expanded",v?"true":"false")}
+$("menuBtn").onclick=function(e){e.stopPropagation();menuShow($("menu").hidden)};
+document.addEventListener("click",function(e){if(!$("menu").hidden&&!$("menu").contains(e.target))menuShow(false)});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")menuShow(false)});
+$("menu").addEventListener("click",function(){menuShow(false)});
 $("myBtn").onclick=function(){trackAll(true);myRender();$("myD").showModal()};
 $("tf").addEventListener("submit",function(e){
   e.preventDefault();
@@ -403,7 +419,7 @@ function notifyNew(){
 function ordersRender(){
   var cnt={new:0,confirmed:0,delivered:0,cancelled:0};
   orders.forEach(function(o){if(cnt[o.status]!==undefined)cnt[o.status]++});
-  $("ocnt").textContent=cnt.new;$("ocnt").hidden=!cnt.new;
+  $("ocnt").textContent=cnt.new;$("ocnt").hidden=!cnt.new;$("mdot").hidden=!cnt.new;
   $("otabs").innerHTML=Object.keys(ST).map(function(k){return '<button class="chip" aria-pressed="'+(otab==k)+'" data-ot="'+k+'">'+ST[k]+' ('+cnt[k]+')</button>'}).join("");
   var list=orders.filter(function(o){return o.status==otab});
   function ab(st,label,cls){return '<button class="'+(cls||"btn ghost")+'" data-os="'+'ID|'+st+'">'+label+'</button>'}
