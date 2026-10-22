@@ -638,12 +638,12 @@ function accRender(){
 }
 function entHtml(e){
   var d=new Date(e.day+"T00:00:00").toLocaleDateString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric"});
-  return '<div class="ent"><div class="l1"><span><span class="tg '+e.kind+'">'+KL[e.kind]+'</span> '+(accV<0?'<b>'+BR[e.brand].n+'</b> · ':'')+esc(e.item||"")+(e.qty?' × '+e.qty:'')+'</span><b>'+fmt(e.amount)+'</b></div><div class="nt">'+d+(e.note?' · '+esc(e.note):'')+'</div><div class="ac"><button class="btn ghost" data-aed="'+e.id+'">تعديل</button><button class="btn danger" data-adel="'+e.id+'">'+(accArm==e.id?"اضغط للتأكيد":"حذف")+'</button></div></div>';
+  return '<div class="ent"><div class="l1"><span><span class="tg '+e.kind+'">'+KL[e.kind]+'</span> '+(accV<0?'<b>'+BR[e.brand].n+'</b> · ':'')+esc(e.item||"")+(e.qty?' × '+e.qty:'')+(e.auto?' <span class="tg pay">تلقائي</span>':'')+'</span><b>'+fmt(e.amount)+'</b></div><div class="nt">'+d+(e.note?' · '+esc(e.note):'')+'</div><div class="ac"><button class="btn ghost" data-aed="'+e.id+'">تعديل</button><button class="btn danger" data-adel="'+e.id+'">'+(accArm==e.id?"اضغط للتأكيد":"حذف")+'</button></div></div>';
 }
 function loadLedger(){
   return sb.from("ledger").select("*").order("day",{ascending:false}).order("id",{ascending:false}).limit(2000).then(function(r){
     if(r.error){accOk=!/relation|does not exist|schema cache/i.test(String(r.error.message||""));ledger=[];accRender();return}
-    accOk=true;ledger=r.data.map(function(x){return {id:x.id,brand:Number(x.brand),kind:x.kind,day:x.day,item:x.item||"",qty:x.qty==null?null:Number(x.qty),amount:Number(x.amount),note:x.note||""}});accRender();
+    accOk=true;ledger=r.data.map(function(x){return {id:x.id,brand:Number(x.brand),kind:x.kind,day:x.day,item:x.item||"",qty:x.qty==null?null:Number(x.qty),amount:Number(x.amount),note:x.note||"",auto:!!x.auto}});accRender();
   });
 }
 function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
