@@ -58,14 +58,14 @@ a.mi{color:inherit;text-decoration:none}
 @keyframes tick{from{transform:translateX(-50%)}to{transform:translateX(0)}}
 @media (prefers-reduced-motion:reduce){.tk{animation:none;transform:none}}
 .cb h3,dialog h2{font-family:"Cairo",Tahoma,sans-serif}
-button,input,select{font:inherit;color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:9px 16px;font-weight:700}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
 .btn:disabled{opacity:.5;cursor:default}
 .cartbtn b{background:var(--tag);color:var(--tag-ink);border-radius:10px;padding:0 7px;margin-inline-start:6px;font-size:13px}
-input,select{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+input,select,textarea{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
 main{max-width:1000px;margin:0 auto;padding:16px}
 .lead{margin:4px 0 16px;color:var(--muted)}
 .brands{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
@@ -93,6 +93,8 @@ main{max-width:1000px;margin:0 auto;padding:16px}
 .cb{padding:12px;display:flex;flex-direction:column;gap:4px;flex:1}
 .cb h3{margin:0;font-size:16px}
 .cb small{color:var(--muted)}
+.cb .ds{margin:2px 0 0;font-size:14px;color:var(--muted);line-height:1.6;white-space:pre-line}
+textarea{resize:vertical;min-height:84px}
 .price{margin-top:auto;padding-top:8px;display:flex;flex-direction:column;align-items:stretch;font-weight:700;gap:8px}
 .price span small{font-weight:400}
 .acts{display:flex;gap:6px}
@@ -203,6 +205,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
     <label for="n">اسم المنتج</label><input id="n" maxlength="120" required>
     <label for="p">سعر البيع (د.ع)</label><input id="p" type="number" min="0" step="any" inputmode="decimal" required>
     <label for="u">الوحدة</label><input id="u" maxlength="40" placeholder="مثال: 20 كجم، خرطوشة، جالون" required>
+    <label for="dsc">شرح بسيط للمنتج (اختياري)</label><textarea id="dsc" maxlength="600" rows="3" placeholder="مثال: مادة عزل مائي للأسطح، تغطي 1.5 م² لكل كغم"></textarea>
     <label for="imgf">صورة المنتج (اختياري)</label>
     <div id="imgbox"><img id="imgprev" alt="" hidden><div><input id="imgf" type="file" accept="image/*"><button type="button" class="btn ghost" id="imgx" hidden style="margin-top:6px">إزالة الصورة</button></div></div>
     <label for="b">البراند</label><select id="b"></select>
@@ -299,7 +302,7 @@ function grid(){
   $("empty").hidden=list.length>0;
   $("grid").innerHTML=list.map(function(p){
     var q=cart[p.id];
-    return '<article class="card">'+(p.img?'<div class="pic" style="border-top:6px solid '+B.bg+'"><img src="'+esc(p.img)+'" alt="'+esc(p.n)+'" loading="lazy"></div>':'<div class="sw" style="background:'+B.bg+';border-bottom:4px solid '+B.bd+'"></div>')+'<div class="cb"><h3>'+esc(p.n)+'</h3><small>'+B.n+' — '+esc(catName(p.c,p.b))+'</small><div class="price"><span>'+fmt(p.p)+' <small>/ '+esc(p.u)+'</small></span><span class="acts">'+
+    return '<article class="card">'+(p.img?'<div class="pic" style="border-top:6px solid '+B.bg+'"><img src="'+esc(p.img)+'" alt="'+esc(p.n)+'" loading="lazy"></div>':'<div class="sw" style="background:'+B.bg+';border-bottom:4px solid '+B.bd+'"></div>')+'<div class="cb"><h3>'+esc(p.n)+'</h3><small>'+B.n+' — '+esc(catName(p.c,p.b))+'</small>'+(p.d?'<p class="ds">'+esc(p.d)+'</p>':'')+'<div class="price"><span>'+fmt(p.p)+' <small>/ '+esc(p.u)+'</small></span><span class="acts">'+
     (q?'<span class="step"><button data-m="'+p.id+'" aria-label="نقص">−</button><b>'+q+'</b><button data-p="'+p.id+'" aria-label="زِد">+</button></span>':'<button class="btn" data-add="'+p.id+'">أضف</button>')+
     (isAdmin?'<button class="btn ghost" data-edit="'+p.id+'">تعديل</button>':'')+'</span></div></div></article>'
   }).join("");
@@ -320,7 +323,7 @@ function refresh(){count();lines();saveCart();if(S.b>=0&&$("grid"))grid()}
 function itemsHtml(items){return (items||[]).map(function(i){return '<div class="oi"><span>'+esc(i.n)+' ('+(BR[i.b]?BR[i.b].n:"")+') × '+i.q+'</span><span>'+fmt(i.p*i.q)+'</span></div>'}).join("")}
 
 /* ---------- المنتجات (قاعدة البيانات) ---------- */
-function mapP(r){return {id:r.id,n:r.name,p:Number(r.price),u:r.unit,b:r.brand,c:r.cat,img:r.image||""}}
+function mapP(r){return {id:r.id,n:r.name,p:Number(r.price),u:r.unit,b:r.brand,c:r.cat,img:r.image||"",d:r.description||""}}
 function loadCats(){
   return sb.from("categories").select("*").order("sort",{ascending:true}).order("id",{ascending:true}).then(function(r){
     if(r.error||!r.data){catsOk=false;return}
@@ -358,7 +361,7 @@ function uploadImg(file){
 function openForm(p){
   editing=p?p.id:null;delArm=false;
   $("ftitle").textContent=p?"تعديل المنتج":"أضف منتج للبيع";
-  $("n").value=p?p.n:"";$("p").value=p?p.p:"";$("u").value=p?p.u:"";
+  $("n").value=p?p.n:"";$("p").value=p?p.p:"";$("u").value=p?p.u:"";$("dsc").value=p?p.d:"";
   $("b").value=p?p.b:(S.b>=0?S.b:BR.indexOf(BR[ORD[0]]));fillCats();
   var cl0=catsOf(+$("b").value);$("c").value=p?p.c:(S.c>=0?S.c:(cl0[0]?cl0[0].id:""));
   $("del").hidden=!p;$("del").textContent="حذف المنتج";
@@ -378,13 +381,14 @@ $("f").addEventListener("submit",function(e){
   if($("c").value===""){toast("أضف قسم لهذا البراند أولاً (إدارة الأقسام)");return}
   var d={name:$("n").value.trim(),price:+$("p").value,unit:$("u").value.trim(),brand:+$("b").value,cat:+$("c").value};
   var orig=editing?(all().filter(function(x){return x.id==editing})[0]||{}):{};
+  var dv=$("dsc").value.trim();if(dv||orig.d)d.description=dv||null;
   var up=imgState.file?uploadImg(imgState.file):Promise.resolve(imgState.url);
   up.then(function(url){
     if(url||orig.img)d.image=url||null;
     var q=editing?sb.from("products").update(d).eq("id",editing):sb.from("products").insert(d);
     return q;
   }).then(function(r){
-    if(r.error){toast(String(r.error.message||"").indexOf("image")>-1?"لازم تفعّل ميزة الصور بقاعدة البيانات أولاً":"ما كدرنا نحفظ. تأكد إنك داخل بحساب المالك.");return}
+    if(r.error){toast(String(r.error.message||"").indexOf("description")>-1?"لازم تفعّل ميزة الشرح بقاعدة البيانات أولاً (سكربت description.sql)":String(r.error.message||"").indexOf("image")>-1?"لازم تفعّل ميزة الصور بقاعدة البيانات أولاً":"ما كدرنا نحفظ. تأكد إنك داخل بحساب المالك.");return}
     var was=editing;$("addD").close();toast(was?"تم حفظ التعديل":"تمت إضافة المنتج");loadProducts();
   }).catch(function(e){var m=e&&e.message?e.message:"";toast(/bucket|not found/i.test(m)?"ما أكو مكان للصور بقاعدة البيانات. شغّل سكربت الصور بـ Supabase.":/row-level|policy|unauthor|jwt/i.test(m)?"ما عندك صلاحية. سجّل دخول المالك من جديد.":"ما كدرنا نرفع الصورة"+(m?" ("+m.slice(0,60)+")":"")+".",5000)});
 });
