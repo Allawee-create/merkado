@@ -125,7 +125,7 @@ textarea{resize:vertical;min-height:84px}
 .ot{display:flex;justify-content:space-between;font-weight:700;padding:8px 0}
 .empty{color:var(--muted);padding:40px 0;text-align:center}
 dialog{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:min(440px,92vw);padding:18px;max-height:88vh}
-#consD,#accD{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border:0;border-radius:0;overflow:auto;padding:max(18px,env(safe-area-inset-top)) 18px 24px}
+#consD,#accD,#cuD{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border:0;border-radius:0;overflow:auto;padding:max(18px,env(safe-area-inset-top)) 18px 24px}
 textarea#cnt{min-height:96px}
 .acc-top{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
 .acc-box{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--surface)}
@@ -175,6 +175,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
     <button class="mi" id="ordBtn" hidden>الطلبات<b id="ocnt" hidden></b></button>
     <button class="mi" id="consAdm" hidden>استشارات<b id="ccnt" hidden></b></button>
     <button class="mi" id="accBtn" hidden>الحسابات</button>
+    <button class="mi" id="cuBtn" hidden>الزبائن</button>
     <button class="mi" id="addBtn" hidden>أضف منتج</button>
     <a class="mi" id="callBtn" href="tel:07700081081">اتصل بنا</a>
     <button class="mi" id="consBtn">احجز استشارة</button>
@@ -245,6 +246,27 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
   <input id="accQ" type="search" placeholder="ابحث: مادة، ملاحظة، مبلغ، تاريخ…" aria-label="بحث">
   <div id="accSum"></div>
   <div id="accList"></div>
+</dialog>
+
+<dialog id="cuD">
+  <div class="row" style="margin-bottom:10px"><h2 id="cuT" style="margin:0;flex:1">الزبائن</h2><button class="btn ghost" id="cuBack" data-cuback hidden>رجوع</button><button class="btn ghost" data-close>إغلاق</button></div>
+  <input id="cuQ" type="search" placeholder="ابحث بالاسم أو الرقم…" aria-label="بحث">
+  <div id="cuRange" hidden style="margin:8px 0">
+    <div class="row" style="gap:8px"><div style="flex:1"><label for="cuF" style="margin:0">من</label><input id="cuF" type="date"></div><div style="flex:1"><label for="cuT2" style="margin:0">إلى</label><input id="cuT2" type="date"></div></div>
+    <div class="chips" style="margin-top:8px;flex-wrap:wrap"><button class="chip" data-cr="all">الكل</button><button class="chip" data-cr="month">هذا الشهر</button><button class="chip" data-cr="30">آخر 30 يوم</button><button class="chip" data-cr="year">هذه السنة</button></div>
+  </div>
+  <div id="cuSum"></div>
+  <div id="cuList"></div>
+</dialog>
+
+<dialog id="cuE">
+  <h2 id="cuET">تسجيل تسديد</h2>
+  <form id="cuEF">
+    <label for="cud">التاريخ</label><input id="cud" type="date" required>
+    <label for="cua">المبلغ (د.ع)</label><input id="cua" type="number" min="0" step="any" inputmode="decimal" required>
+    <label for="cun">ملاحظة (اختياري)</label><input id="cun" maxlength="500">
+    <div class="row" style="margin-top:16px"><button class="btn" style="flex:1">احفظ</button><button type="button" class="btn ghost" data-close>إلغاء</button></div>
+  </form>
 </dialog>
 
 <dialog id="entD">
@@ -549,6 +571,20 @@ $("consF").addEventListener("submit",function(e){
     $("consD").close();toast("وصلنا طلبك وراح نتواصل وياك قريباً",6000);
   });
 });
+$("cuBtn").onclick=function(){menuShow(false);cuK=null;cuQ="";cuF="";cuTo="";cuArm=null;$("cuQ").value="";$("cuF").value="";$("cuT2").value="";$("cuD").showModal();cuRender();loadCust()};
+$("cuQ").addEventListener("input",function(){cuQ=$("cuQ").value;cuRender()});
+$("cuF").addEventListener("change",function(){cuF=$("cuF").value;cuRender()});
+$("cuT2").addEventListener("change",function(){cuTo=$("cuT2").value;cuRender()});
+$("cuEF").addEventListener("submit",function(e){
+  e.preventDefault();var c=cuBuild()[cuK];if(!c)return;
+  var amt=parseFloat(digits($("cua").value));if(!(amt>=0)){toast("اكتب المبلغ");return}
+  var d={phone:c.phone,name:c.name||null,kind:cuKind,day:$("cud").value||today(),amount:amt,note:$("cun").value.trim()||null};
+  var q=cuEditId?sb.from("cust_ledger").update(d).eq("id",cuEditId):sb.from("cust_ledger").insert(d);
+  q.then(function(r){
+    if(r.error){toast(/relation|does not exist|schema cache/i.test(String(r.error.message||""))?"لازم تفعّل حسابات الزبائن بقاعدة البيانات أولاً":"ما كدرنا نحفظ. تأكد إنك داخل كمالك.",5000);return}
+    $("cuE").close();toast(cuEditId?"تم حفظ التعديل":"تم التسجيل");loadCust();
+  });
+});
 $("accBtn").onclick=function(){menuShow(false);accV=-1;accQ="";accK="all";accArm=null;$("accQ").value="";$("accD").showModal();accRender();loadLedger()};
 $("accQ").addEventListener("input",function(){accQ=$("accQ").value;accArm=null;accRender()});
 $("entF").addEventListener("submit",function(e){
@@ -599,6 +635,125 @@ function notifyNew(){
   try{navigator.vibrate&&navigator.vibrate(200)}catch(e){}
   try{if(window.Notification&&Notification.permission=="granted")new Notification(TITLE,{body:msg})}catch(e){}
 }
+/* ---------- حسابات الزبائن ---------- */
+var custL=[],cuOk=true,cuQ="",cuK=null,cuF="",cuTo="",cuArm=null,cuEditId=null,cuKind="pay";
+var CL={order:"طلب",pay:"تسديد",debit:"دين سابق"};
+function nf(x){return Number(x).toLocaleString("en-US",{maximumFractionDigits:2})}
+function pk(ph){var d=digits(String(ph||"")).replace(/\D/g,"");if(d.indexOf("964")==0)d="0"+d.slice(3);else if(d.length==10&&d.charAt(0)=="7")d="0"+d;return d}
+function cuBuild(){
+  var m={};
+  function g(k,n,ph){return m[k]||(m[k]={key:k,name:n||"",phone:k,ev:[],bal:0,last:0,tot:0,paid:0})}
+  orders.forEach(function(o){var k=pk(o.phone);if(!k)return;var c=g(k,o.name,o.phone);if(o.t>c.last){c.last=o.t;c.name=o.name||c.name}
+    if(o.status=="confirmed"||o.status=="delivered")c.ev.push({t:o.t,type:"order",code:o.code,amt:Math.max(0,o.total-(o.discount||0))})});
+  custL.forEach(function(x){var k=pk(x.phone);if(!k)return;var c=g(k,x.name,x.phone);if(!c.last&&x.name)c.name=x.name;c.ev.push({t:Date.parse(x.day+"T12:00:00"),type:x.kind,amt:x.amount,note:x.note,id:x.id})});
+  Object.keys(m).forEach(function(k){var c=m[k];c.ev.sort(function(a,b){return a.t-b.t});var b=0;c.ev.forEach(function(e){if(e.type=="pay"){b-=e.amt;c.paid+=e.amt}else{b+=e.amt;c.tot+=e.amt}e.run=b});c.bal=b});
+  return m;
+}
+function cuBalHtml(x,big){var t=x>0?'<span class="neg">عليه '+fmt(x)+'</span>':x<0?'<span class="pos">له '+fmt(-x)+'</span>':'<span>مسدّد</span>';return big?'<b>'+t+'</b>':t}
+function cuRng(){return [cuF?Date.parse(cuF+"T00:00:00"):-Infinity,cuTo?Date.parse(cuTo+"T23:59:59"):Infinity]}
+function cuView(c){
+  var r=cuRng(),open=0;
+  c.ev.forEach(function(e){if(e.t<r[0])open=e.run});
+  var rows=c.ev.filter(function(e){return e.t>=r[0]&&e.t<=r[1]});
+  var close=rows.length?rows[rows.length-1].run:open;
+  return {open:open,rows:rows,close:close};
+}
+function dmy(t){return new Date(t).toLocaleDateString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric"})}
+function cuRender(){
+  if(!$("cuD").open)return;
+  $("cuBack").hidden=cuK==null;$("cuRange").hidden=cuK==null;$("cuQ").hidden=cuK!=null;
+  if(!cuOk){$("cuSum").innerHTML="";$("cuList").innerHTML='<div class="empty">لازم تفعّل حسابات الزبائن بقاعدة البيانات أولاً (سكربت custledger.sql).</div>';return}
+  var m=cuBuild(),sum="",list="";
+  if(cuK==null){
+    $("cuT").textContent="الزبائن";
+    var arr=Object.keys(m).map(function(k){return m[k]}),q=digits(cuQ).toLowerCase().trim(),owed=0,cnt=0;
+    arr.forEach(function(c){if(c.bal>0){owed+=c.bal;cnt++}});
+    if(q)arr=arr.filter(function(c){return (c.name+" "+c.phone+" "+c.key).toLowerCase().indexOf(q)>-1});
+    arr.sort(function(a,b){return (b.bal>0)-(a.bal>0)||b.bal-a.bal||b.last-a.last});
+    sum='<div class="acc-top"><div class="acc-box"><small>مجموع اللي عليهم</small><b class="neg">'+fmt(owed)+'</b></div><div class="acc-box"><small>عدد المدينين</small><b>'+cnt+'</b></div></div>';
+    list=arr.length?arr.map(function(c){return '<button class="acc-card" data-cu="'+esc(c.key)+'"><span class="acc-dot" style="background:var(--accent)"></span><span class="m"><b>'+esc(c.name||c.phone)+'</b><small dir="ltr" style="text-align:right">'+esc(c.phone)+'</small></span>'+cuBalHtml(c.bal,true)+'</button>'}).join(""):'<div class="empty">ما أكو زبائن'+(q?" مطابقين":" بعد")+'.</div>';
+  }else{
+    var c=m[cuK];if(!c){cuK=null;cuRender();return}
+    $("cuT").textContent=c.name||c.phone;
+    var v=cuView(c);
+    sum='<div style="margin:6px 0"><a href="tel:'+esc(String(c.phone).replace(/[^0-9+]/g,""))+'" dir="ltr">'+esc(c.phone)+'</a></div>'+
+      '<div class="acc-top"><div class="acc-box"><small>إجمالي المطلوب</small><b>'+fmt(c.tot)+'</b></div><div class="acc-box"><small>المسدّد</small><b>'+fmt(c.paid)+'</b></div><div class="acc-box" style="grid-column:1/-1"><small>الباقي</small>'+cuBalHtml(c.bal,true)+'</div></div>'+
+      '<div class="row" style="flex-wrap:wrap;margin-bottom:8px"><button class="btn" data-cpay style="flex:1">+ تسجيل تسديد</button><button class="btn ghost" data-cdeb style="flex:1">+ دين سابق</button></div>'+
+      '<button class="btn" data-cpdf style="width:100%;margin-bottom:10px">تحميل كشف الحساب PDF</button>'+
+      '<div class="nt" style="margin-bottom:6px;color:var(--muted)">الرصيد قبل الفترة: '+fmt(v.open)+'</div>';
+    list=v.rows.length?v.rows.slice().reverse().map(function(e){
+      var man=e.id!=null;
+      return '<div class="ent"><div class="l1"><span><span class="tg '+(e.type=="pay"?"pay":"buy")+'">'+CL[e.type]+(e.code?' #'+esc(e.code):'')+'</span> '+dmy(e.t)+'</span><b class="'+(e.type=="pay"?"pos":"neg")+'">'+(e.type=="pay"?"−":"+")+nf(e.amt)+'</b></div><div class="nt">'+(e.note?esc(e.note)+' · ':'')+'الرصيد: '+nf(e.run)+'</div>'+
+        (man?'<div class="ac"><button class="btn ghost" data-cux="'+e.id+'">تعديل</button><button class="btn danger" data-cdl="'+e.id+'">'+(cuArm==e.id?"اضغط للتأكيد":"حذف")+'</button></div>':'')+'</div>';
+    }).join(""):'<div class="empty">ما أكو حركات بهذه الفترة.</div>';
+    list+='<div class="nt" style="margin-top:6px;color:var(--muted)">الرصيد بنهاية الفترة: <b>'+fmt(v.close)+'</b></div>';
+  }
+  $("cuSum").innerHTML=sum;$("cuList").innerHTML=list;
+}
+function loadCust(){
+  return sb.from("cust_ledger").select("*").order("day",{ascending:false}).order("id",{ascending:false}).limit(5000).then(function(r){
+    if(r.error){cuOk=!/relation|does not exist|schema cache/i.test(String(r.error.message||""));custL=[];cuRender();return}
+    cuOk=true;custL=r.data.map(function(x){return {id:x.id,phone:x.phone,name:x.name||"",kind:x.kind,day:x.day,amount:Number(x.amount),note:x.note||""}});cuRender();
+  });
+}
+function cuEntry(kind,e){
+  cuEditId=e?e.id:null;cuKind=e?e.type:kind;
+  $("cuET").textContent=(cuKind=="pay"?"تسجيل تسديد":"دين سابق");
+  $("cud").value=e?new Date(e.t).getFullYear()+"-"+String(new Date(e.t).getMonth()+1).padStart(2,"0")+"-"+String(new Date(e.t).getDate()).padStart(2,"0"):today();
+  $("cua").value=e?e.amt:"";$("cun").value=e&&e.note?e.note:"";
+  $("cuE").showModal();
+}
+function stmtHtml(c,v){
+  var td='padding:8px 10px;border-bottom:1px solid #dde4e3;';
+  var rows=v.rows.map(function(e,k){
+    var dbt=e.type!="pay",lab=CL[e.type]+(e.code?" #"+e.code:"")+(e.note?" — "+e.note:"");
+    return '<tr style="background:'+(k%2?'#f4f7f6':'#fff')+'"><td style="'+td+'direction:ltr;text-align:right">'+dmy(e.t)+'</td><td style="'+td+'">'+esc(lab)+'</td><td style="'+td+'text-align:left;direction:ltr">'+(dbt?nf(e.amt):"")+'</td><td style="'+td+'text-align:left;direction:ltr">'+(dbt?"":nf(e.amt))+'</td><td style="'+td+'text-align:left;direction:ltr;font-weight:700">'+nf(e.run)+'</td></tr>'}).join("");
+  var mark='<svg viewBox="0 0 120 126" width="52" height="55"><path d="M60 4C60 4 49 15 49 21a11 11 0 0 0 22 0C71 15 60 4 60 4Z" fill="#E0A110"/><path d="M8 66C8 46 30 34 60 34C90 34 112 46 112 66Q98 58 86 66Q73 58 60 66Q47 58 34 66Q21 58 8 66Z" fill="#1F8E85"/><path d="M26 118V80L60 104L94 80V118" fill="none" stroke="#0F1A21" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var ch='font-family:Cairo,Tahoma,sans-serif;font-weight:800;';
+  var per=(cuF||cuTo)?((cuF?dmy(Date.parse(cuF+"T00:00:00")):"البداية")+" — "+(cuTo?dmy(Date.parse(cuTo+"T00:00:00")):"اليوم")):"كل الفترات";
+  var th='padding:9px 10px;';
+  return '<div dir="rtl" style="width:794px;box-sizing:border-box;padding:44px 48px;background:#fff;color:#0F1A21;font-family:Tajawal,Tahoma,Arial,sans-serif;font-size:14px;line-height:1.6">'+
+  '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:18px;border-bottom:4px solid #1F8E85"><div style="display:flex;align-items:center;gap:14px">'+mark+'<div><div style="'+ch+'font-size:32px;line-height:1.1">ميركادو</div><div style="font-size:13px;color:#566771">مواد الإنشاء والعزل بمكان واحد</div></div></div><div style="text-align:left"><div style="'+ch+'font-size:28px;color:#1F8E85">كشف حساب</div><div style="font-size:14px;color:#566771;direction:ltr;text-align:left">Statement</div></div></div>'+
+  '<div style="display:flex;gap:20px;margin:20px 0"><div style="flex:1;border:1px solid #dde4e3;border-radius:6px;padding:12px 14px"><div style="'+ch+'color:#1F8E85;margin-bottom:4px">الزبون</div><div><b>'+esc(c.name||"")+'</b></div><div dir="ltr" style="text-align:right">'+esc(c.phone)+'</div></div><div style="flex:1;border:1px solid #dde4e3;border-radius:6px;padding:12px 14px"><div style="'+ch+'color:#1F8E85;margin-bottom:4px">الفترة</div><div>'+per+'</div><div style="color:#566771;font-size:13px">تاريخ الإصدار: '+dmy(Date.now())+'</div></div></div>'+
+  '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0F1A21;color:#fff"><th style="'+th+'text-align:right;width:92px">التاريخ</th><th style="'+th+'text-align:right">البيان</th><th style="'+th+'text-align:left;width:100px">عليه</th><th style="'+th+'text-align:left;width:100px">له (تسديد)</th><th style="'+th+'text-align:left;width:110px">الرصيد</th></tr></thead><tbody>'+
+  '<tr style="background:#eef3f2"><td style="'+td+'"></td><td style="'+td+'font-weight:700">رصيد سابق</td><td style="'+td+'"></td><td style="'+td+'"></td><td style="'+td+'text-align:left;direction:ltr;font-weight:700">'+nf(v.open)+'</td></tr>'+rows+'</tbody></table>'+
+  '<div style="display:flex;justify-content:flex-start;margin-top:16px"><div style="width:320px"><div style="display:flex;justify-content:space-between;padding:12px 14px;background:#0F1A21;color:#fff;border-radius:6px;font-size:17px;font-weight:700"><span>'+(v.close>0?"الباقي عليه":v.close<0?"الرصيد له":"الرصيد")+'</span><span dir="ltr">'+nf(Math.abs(v.close))+' '+CUR+'</span></div></div></div>'+
+  '<div style="margin-top:36px;padding-top:14px;border-top:1px solid #dde4e3;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#566771"><div>للتواصل: <b dir="ltr" style="color:#0F1A21">07700081081</b></div><div dir="ltr" style="text-align:left">Powered by QAC Eng.Ali Zuhair Aziz<br>mirkado.net</div></div></div>';
+}
+function makePdf(html,fname){
+  toast("جاري تجهيز الملف…",8000);
+  var host=document.createElement("div");host.style.cssText="position:fixed;left:0;top:0;z-index:9998;background:#fff";host.innerHTML=html;document.body.appendChild(host);
+  var cover=document.createElement("div");cover.style.cssText="position:fixed;inset:0;z-index:9999;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px";cover.textContent="جاري تجهيز الملف…";document.body.appendChild(cover);
+  var fontsReady=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();
+  libs().then(function(){return fontsReady}).then(function(){
+    return window.html2canvas(host.firstChild,{scale:2,backgroundColor:"#ffffff",useCORS:true,scrollX:0,scrollY:0})
+  }).then(function(cv){
+    var J=window.jspdf.jsPDF,pdf=new J({unit:"pt",format:"a4",orientation:"portrait"});
+    var pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
+    var ih=cv.height*pw/cv.width,pages=Math.max(1,Math.ceil(ih/ph-0.001)),sliceH=Math.floor(cv.width*ph/pw);
+    for(var p=0;p<pages;p++){
+      var part=document.createElement("canvas");part.width=cv.width;part.height=Math.min(sliceH,cv.height-p*sliceH);
+      var cx=part.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,part.width,part.height);cx.drawImage(cv,0,p*sliceH,cv.width,part.height,0,0,cv.width,part.height);
+      if(p)pdf.addPage();
+      pdf.addImage(part.toDataURL("image/jpeg",.92),"JPEG",0,0,pw,part.height*pw/cv.width);
+    }
+    pdf.save(fname);toast("تم تجهيز الكشف");
+  }).catch(function(){toast("ما كدرنا نسوي الملف. تأكد من الإنترنت وجرّب مرة ثانية.",5000)}).then(function(){host.remove();cover.remove()});
+}
+function cuPdf(){
+  var c=cuBuild()[cuK];if(!c)return;
+  makePdf(stmtHtml(c,cuView(c)),"Statement-"+c.key+(cuF?"-from-"+cuF:"")+(cuTo?"-to-"+cuTo:"")+".pdf");
+}
+function cuSetRange(k){
+  var d=new Date(),y=d.getFullYear(),mo=d.getMonth();
+  function iso(x){return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")}
+  if(k=="all"){cuF="";cuTo=""}
+  else if(k=="month"){cuF=iso(new Date(y,mo,1));cuTo=iso(d)}
+  else if(k=="year"){cuF=iso(new Date(y,0,1));cuTo=iso(d)}
+  else{var f=new Date(d.getTime()-29*864e5);cuF=iso(f);cuTo=iso(d)}
+  $("cuF").value=cuF;$("cuT2").value=cuTo;cuRender();
+}
+
 /* ---------- الحسابات ---------- */
 var ledger=[],accOk=true,accV=-1,accQ="",accK="all",accEdit=null,accArm=null,accAddB=-1;
 var KL={buy:"شراء",pay:"دفعة",credit:"رصيد لي"};
@@ -689,9 +844,9 @@ function ordersRender(){
   }).join(""):'<div class="empty">ما أكو طلبات '+ST[otab]+'.</div>';
 }
 function loadOrders(){
-  return sb.from("orders").select("*").order("created_at",{ascending:false}).limit(500).then(function(r){
+  return sb.from("orders").select("*").order("created_at",{ascending:false}).limit(3000).then(function(r){
     if(r.error)return;
-    orders=r.data.map(mapO);ordersRender();notifyNew();
+    orders=r.data.map(mapO);ordersRender();notifyNew();cuRender();
   });
 }
 function setDiscount(id){
@@ -823,8 +978,8 @@ $("ordBtn").onclick=function(){
 };
 function setAdmin(session){
   var was=isAdmin;isAdmin=!!session;
-  $("addBtn").hidden=!isAdmin;$("ordBtn").hidden=!isAdmin;$("consAdm").hidden=!isAdmin;$("accBtn").hidden=!isAdmin;
-  if(!isAdmin){ledger=[];if($("accD").open)$("accD").close()}
+  $("addBtn").hidden=!isAdmin;$("ordBtn").hidden=!isAdmin;$("consAdm").hidden=!isAdmin;$("accBtn").hidden=!isAdmin;$("cuBtn").hidden=!isAdmin;
+  if(!isAdmin){custL=[];if($("cuD").open)$("cuD").close();ledger=[];if($("accD").open)$("accD").close()}
   if(isAdmin&&!consCh){
     loadCons();
     consCh=sb.channel("cons-feed").on("postgres_changes",{event:"*",schema:"public",table:"consultations"},function(p){if(p.eventType=="INSERT"){toast("طلب استشارة جديد",6000);beep()}loadCons()}).subscribe();
@@ -865,6 +1020,14 @@ document.addEventListener("click",function(e){
   else if(d.invo){invoicePdf(d.invo,true)}
   else if(d.invs){invoicePdf(d.invs,true,true)}
   else if(d.wasend!==undefined){waOrder()}
+  else if(d.cu!==undefined){cuK=d.cu;cuArm=null;cuRender();$("cuD").scrollTo(0,0)}
+  else if(d.cuback!==undefined){cuK=null;cuArm=null;cuRender()}
+  else if(d.cpay!==undefined){cuEntry("pay",null)}
+  else if(d.cdeb!==undefined){cuEntry("debit",null)}
+  else if(d.cpdf!==undefined){cuPdf()}
+  else if(d.cr){cuSetRange(d.cr)}
+  else if(d.cux){var cc=cuBuild()[cuK],ce=cc&&cc.ev.filter(function(x){return x.id==d.cux})[0];if(ce)cuEntry(ce.type,ce)}
+  else if(d.cdl){if(cuArm!=d.cdl){cuArm=d.cdl;cuRender();return}sb.from("cust_ledger").delete().eq("id",d.cdl).then(function(r){cuArm=null;r.error?toast("ما كدرنا نحذف"):(toast("تم الحذف"),loadCust())})}
   else if(d.accb!==undefined){accV=+d.accb;accK="all";accQ="";$("accQ").value="";accArm=null;accRender();$("accD").scrollTo(0,0)}
   else if(d.accback!==undefined){accV=-1;accQ="";$("accQ").value="";accArm=null;accRender()}
   else if(d.ak){accK=d.ak;accRender()}
