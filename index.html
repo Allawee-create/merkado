@@ -35,10 +35,12 @@ h1 svg{flex:none}
 .ht{display:flex;flex-direction:column;gap:4px;min-width:0}
 .hn{font-family:"Cairo",Tahoma,sans-serif;font-weight:800;font-size:clamp(44px,13vw,84px);line-height:1.05;color:var(--ink)}
 .hl{font-family:"Cairo",Tahoma,sans-serif;font-weight:600;font-size:clamp(13px,3.6vw,20px);letter-spacing:.46em;color:var(--accent);text-align:right}
-.hs span{display:inline-block;opacity:0;transform:translateY(6px);transition:opacity .45s ease,transform .45s ease;white-space:pre}
-.hs span.on{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){.hs span{opacity:1;transform:none;transition:none}}
-.hs{font-size:clamp(13px,3.8vw,18px);color:var(--muted)}
+.hs{position:relative;overflow:hidden;height:1.9em;direction:ltr;font-size:clamp(13px,3.8vw,18px);color:var(--muted);-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.tk{position:absolute;top:0;left:0;display:flex;white-space:nowrap;width:max-content;animation:tick 22s linear infinite}
+.tk span{padding:0 1.4em;direction:rtl;unicode-bidi:isolate}
+.tk span::before{content:"\25C6";color:var(--tag);margin-inline-end:1.4em;font-size:.7em;vertical-align:.1em}
+@keyframes tick{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+@media (prefers-reduced-motion:reduce){.tk{animation:none;transform:none}}
 .cb h3,dialog h2{font-family:"Cairo",Tahoma,sans-serif}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -235,29 +237,13 @@ function saveCart(){lsSet("mm-cart",cart)}
 function mk(b,tag){var B=BR[b];return '<'+tag+' class="mark" style="background:'+B.bg+';color:'+B.fg+';border-bottom:6px solid '+B.bd+'" data-b="'+b+'">'+B.n+'</'+tag+'>'}
 function status(){return failed?failed:(!loaded?"جاري تحميل المنتجات…":"")}
 function home(){
-  var n=all(),h='<div class="hero"><svg aria-hidden="true" viewBox="0 0 120 126" width="84" height="88"><path d="M60 4C60 4 49 15 49 21a11 11 0 0 0 22 0C71 15 60 4 60 4Z" fill="#F0B429"/><path d="M8 66C8 46 30 34 60 34C90 34 112 46 112 66Q98 58 86 66Q73 58 60 66Q47 58 34 66Q21 58 8 66Z" fill="var(--accent)"/><path d="M26 118V80L60 104L94 80V118" fill="none" stroke="var(--ink)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="ht"><div class="hn">ميركادو</div><div class="hl" dir="ltr">MIRKADO</div><div class="hs">مواد الإنشاء والعزل بمكان واحد</div></div></div><p class="lead">'+(status()||(n.length?"اختر البراند حتى تشوف منتجاته.":"ما أكو منتجات بعد."+(isAdmin?" اضغط «أضف منتج» وابدأ.":"")))+'</p><div class="brands">';
+  var n=all(),h='<div class="hero"><svg aria-hidden="true" viewBox="0 0 120 126" width="84" height="88"><path d="M60 4C60 4 49 15 49 21a11 11 0 0 0 22 0C71 15 60 4 60 4Z" fill="#F0B429"/><path d="M8 66C8 46 30 34 60 34C90 34 112 46 112 66Q98 58 86 66Q73 58 60 66Q47 58 34 66Q21 58 8 66Z" fill="var(--accent)"/><path d="M26 118V80L60 104L94 80V118" fill="none" stroke="var(--ink)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="ht"><div class="hn">ميركادو</div><div class="hl" dir="ltr">MIRKADO</div><div class="hs" role="text" aria-label="مواد الإنشاء والعزل بمكان واحد"><div class="tk" aria-hidden="true"><span>مواد الإنشاء والعزل بمكان واحد</span><span>مواد الإنشاء والعزل بمكان واحد</span><span>مواد الإنشاء والعزل بمكان واحد</span><span>مواد الإنشاء والعزل بمكان واحد</span><span>مواد الإنشاء والعزل بمكان واحد</span><span>مواد الإنشاء والعزل بمكان واحد</span></div></div></div></div><p class="lead">'+(status()||(n.length?"اختر البراند حتى تشوف منتجاته.":"ما أكو منتجات بعد."+(isAdmin?" اضغط «أضف منتج» وابدأ.":"")))+'</p><div class="brands">';
   ORD.forEach(function(i){
     h+='<section class="brand">'+mk(i,"button")+'</section>';
   });
   $("main").innerHTML=h+'</div>';
-  heroAnim();
 }
-var heroT=null;
-function heroAnim(){
-  clearInterval(heroT);
-  var el=document.querySelector(".hs");if(!el)return;
-  var words=el.textContent.split(" ");
-  el.setAttribute("aria-label",el.textContent);
-  el.innerHTML=words.map(function(w,i){return '<span aria-hidden="true">'+esc(w)+(i<words.length-1?" ":"")+'</span>'}).join("");
-  var sp=el.querySelectorAll("span"),i=0,hold=0;
-  if(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches){sp.forEach(function(x){x.classList.add("on")});return}
-  heroT=setInterval(function(){
-    if(!document.body.contains(el)){clearInterval(heroT);return}
-    if(i<sp.length){sp[i++].classList.add("on")}
-    else if(hold<8){hold++}
-    else{sp.forEach(function(x){x.classList.remove("on")});i=0;hold=0}
-  },380);
-}
+
 function brand(){
   var B=BR[S.b];
   var h='<div class="bar"><button class="btn ghost" data-home>كل البراندات</button>'+mk(S.b,"div")+'</div>';
