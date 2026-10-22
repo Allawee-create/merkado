@@ -107,7 +107,7 @@ textarea{resize:vertical;min-height:84px}
 .step{flex:1;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--accent);border-radius:6px;overflow:hidden}
 .step button{background:transparent;border:0;width:40px;height:38px;font-size:20px;color:var(--accent)}
 .step b{min-width:28px;text-align:center}
-#ocnt{background:var(--tag);color:var(--tag-ink);border-radius:10px;padding:0 7px;margin-inline-start:6px;font-size:13px}
+#ocnt,#ccnt{background:var(--tag);color:var(--tag-ink);border-radius:10px;padding:0 7px;margin-inline-start:6px;font-size:13px}
 #ordD{width:min(640px,94vw)}
 .ord{border:1px solid var(--line);border-radius:4px;padding:12px;margin-bottom:10px}
 .oh{display:flex;justify-content:space-between;gap:8px;font-size:15px}
@@ -125,6 +125,8 @@ textarea{resize:vertical;min-height:84px}
 .ot{display:flex;justify-content:space-between;font-weight:700;padding:8px 0}
 .empty{color:var(--muted);padding:40px 0;text-align:center}
 dialog{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:min(440px,92vw);padding:18px;max-height:88vh}
+#consD{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border:0;border-radius:0;overflow:auto;padding:max(18px,env(safe-area-inset-top)) 18px 24px}
+textarea#cnt{min-height:96px}
 dialog::backdrop{background:rgba(0,0,0,.45)}
 dialog h2{margin:0 0 12px;font-size:19px}
 .li{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -155,8 +157,10 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
   <div id="menu" hidden>
     <button class="mi" id="myBtn">طلباتي</button>
     <button class="mi" id="ordBtn" hidden>الطلبات<b id="ocnt" hidden></b></button>
+    <button class="mi" id="consAdm" hidden>استشارات<b id="ccnt" hidden></b></button>
     <button class="mi" id="addBtn" hidden>أضف منتج</button>
     <a class="mi" id="callBtn" href="tel:07700081081">اتصل بنا</a>
+    <button class="mi" id="consBtn">احجز استشارة</button>
     <button class="mi" id="aboutBtn">من نحن</button>
   </div>
 </header>
@@ -186,6 +190,37 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
   <h2>وصل طلبك</h2>
   <div id="doneB"></div>
   <div class="row" style="margin-top:12px"><button class="btn" data-close style="flex:1">تمام</button></div>
+</dialog>
+
+<dialog id="consD">
+  <h2>احجز استشارة</h2>
+  <p style="margin:0 0 12px;color:var(--muted);line-height:1.8">عبّي البيانات وراح نتواصل وياك لتحديد موعد الاستشارة.</p>
+  <form id="consF">
+    <label for="kn">اسمك</label><input id="kn" maxlength="120" required>
+    <label for="kp">رقم هاتفك</label><input id="kp" type="tel" inputmode="tel" maxlength="30" required>
+    <label for="kj">اسم المشروع</label><input id="kj" maxlength="160" required>
+    <label for="ka">العنوان</label><input id="ka" maxlength="250" required>
+    <label for="ks">نوع الخدمة</label>
+    <select id="ks" required>
+      <option value="">اختر نوع الخدمة</option>
+      <option>عزل مائي (أسطح، خزانات، حمامات)</option>
+      <option>عزل حراري</option>
+      <option>أرضيات إيبوكسي وصناعية</option>
+      <option>إصلاح وترميم الخرسانة</option>
+      <option>لواصق وسيراميك</option>
+      <option>إضافات خرسانة ومونة</option>
+      <option>أخرى</option>
+    </select>
+    <label for="kt">ملاحظات إضافية</label><textarea id="kt" maxlength="1000" rows="4" placeholder="اكتب أي تفاصيل تساعدنا نفهم مشروعك"></textarea>
+    <div class="row" style="margin-top:16px"><button class="btn" id="ksend" style="flex:1">أرسل الطلب</button><button type="button" class="btn ghost" data-close>رجوع</button></div>
+  </form>
+</dialog>
+
+<dialog id="admCD">
+  <h2>الاستشارات</h2>
+  <div class="chips" id="ctabs"></div>
+  <div id="clist"></div>
+  <div class="row" style="margin-top:12px"><button class="btn ghost" data-close style="flex:1">إغلاق</button></div>
 </dialog>
 
 <dialog id="aboutD">
@@ -462,6 +497,20 @@ $("menuBtn").onclick=function(e){e.stopPropagation();menuShow($("menu").hidden)}
 document.addEventListener("click",function(e){if(!$("menu").hidden&&!$("menu").contains(e.target))menuShow(false)});
 document.addEventListener("keydown",function(e){if(e.key==="Escape")menuShow(false)});
 $("menu").addEventListener("click",function(){menuShow(false)});
+$("consBtn").onclick=function(){
+  menuShow(false);$("consF").reset();$("kn").value=CUST.n||"";$("kp").value=CUST.p||"";$("consD").showModal();
+};
+$("consAdm").onclick=function(){menuShow(false);cArm=null;consRender();$("admCD").showModal()};
+$("consF").addEventListener("submit",function(e){
+  e.preventDefault();if(!sb){toast("الموقع غير مربوط بقاعدة البيانات");return}
+  var d={name:$("kn").value.trim(),phone:digits($("kp").value.trim()),project:$("kj").value.trim(),address:$("ka").value.trim(),service:$("ks").value,notes:$("kt").value.trim()||null};
+  $("ksend").disabled=true;
+  sb.from("consultations").insert(d).then(function(r){
+    $("ksend").disabled=false;
+    if(r.error){toast(/relation|does not exist|schema cache/i.test(String(r.error.message||""))?"خدمة الاستشارات غير مفعّلة بعد":"ما كدرنا نرسل الطلب. جرّب مرة ثانية.",5000);return}
+    $("consD").close();toast("وصلنا طلبك وراح نتواصل وياك قريباً",6000);
+  });
+});
 $("aboutBtn").onclick=function(){menuShow(false);$("aboutD").showModal()};
 $("myBtn").onclick=function(){trackAll(true);myRender();$("myD").showModal()};
 $("tf").addEventListener("submit",function(e){
@@ -497,10 +546,29 @@ function notifyNew(){
   try{navigator.vibrate&&navigator.vibrate(200)}catch(e){}
   try{if(window.Notification&&Notification.permission=="granted")new Notification(TITLE,{body:msg})}catch(e){}
 }
+var ordNew=0,consNew=0,cons=[],ctab="new",consCh=null,cArm=null;
+function updDot(){$("mdot").hidden=!(ordNew||consNew)}
+function consRender(){
+  var n={new:0,done:0};cons.forEach(function(c){if(n[c.status]!==undefined)n[c.status]++});
+  consNew=n.new;$("ccnt").textContent=n.new;$("ccnt").hidden=!n.new;updDot();
+  $("ctabs").innerHTML='<button class="chip" aria-pressed="'+(ctab=="new")+'" data-ck="new">جديدة ('+n.new+')</button><button class="chip" aria-pressed="'+(ctab=="done")+'" data-ck="done">تم التواصل ('+n.done+')</button>';
+  var list=cons.filter(function(c){return c.status==ctab});
+  function row(k,v){return v?'<div style="margin:2px 0"><span style="color:var(--muted)">'+k+':</span> '+esc(v)+'</div>':""}
+  $("clist").innerHTML=list.length?list.map(function(c){
+    var d=new Date(c.created_at).toLocaleString("en-GB",{dateStyle:"short",timeStyle:"short"});
+    return '<div class="ord"><div class="oh"><b>'+esc(c.name)+'</b><span>'+d+'</span></div><div><a href="tel:'+esc(String(c.phone).replace(/[^0-9+]/g,""))+'">'+esc(c.phone)+'</a></div>'+row("المشروع",c.project)+row("العنوان",c.address)+row("الخدمة",c.service)+row("ملاحظات",c.notes)+
+      '<div class="row" style="margin-top:8px">'+(c.status=="new"?'<button class="btn" data-cst="'+c.id+'|done">تم التواصل</button>':'<button class="btn ghost" data-cst="'+c.id+'|new">رجّعها لجديدة</button>')+'<button class="btn danger" data-cdel="'+c.id+'">'+(cArm==c.id?"اضغط للتأكيد":"حذف")+'</button></div></div>'
+  }).join(""):'<div class="empty">ما أكو استشارات '+(ctab=="new"?"جديدة":"بهذا القسم")+'.</div>';
+}
+function loadCons(){
+  return sb.from("consultations").select("*").order("created_at",{ascending:false}).limit(300).then(function(r){
+    if(r.error)return;cons=r.data;consRender();
+  });
+}
 function ordersRender(){
   var cnt={new:0,confirmed:0,delivered:0,cancelled:0};
   orders.forEach(function(o){if(cnt[o.status]!==undefined)cnt[o.status]++});
-  $("ocnt").textContent=cnt.new;$("ocnt").hidden=!cnt.new;$("mdot").hidden=!cnt.new;
+  $("ocnt").textContent=cnt.new;$("ocnt").hidden=!cnt.new;ordNew=cnt.new;updDot();
   $("otabs").innerHTML=Object.keys(ST).map(function(k){return '<button class="chip" aria-pressed="'+(otab==k)+'" data-ot="'+k+'">'+ST[k]+' ('+cnt[k]+')</button>'}).join("");
   var list=orders.filter(function(o){return o.status==otab});
   function ab(st,label,cls){return '<button class="'+(cls||"btn ghost")+'" data-os="'+'ID|'+st+'">'+label+'</button>'}
@@ -648,7 +716,12 @@ $("ordBtn").onclick=function(){
 };
 function setAdmin(session){
   var was=isAdmin;isAdmin=!!session;
-  $("addBtn").hidden=!isAdmin;$("ordBtn").hidden=!isAdmin;
+  $("addBtn").hidden=!isAdmin;$("ordBtn").hidden=!isAdmin;$("consAdm").hidden=!isAdmin;
+  if(isAdmin&&!consCh){
+    loadCons();
+    consCh=sb.channel("cons-feed").on("postgres_changes",{event:"*",schema:"public",table:"consultations"},function(p){if(p.eventType=="INSERT"){toast("طلب استشارة جديد",6000);beep()}loadCons()}).subscribe();
+  }
+  if(!isAdmin&&consCh){try{sb.removeChannel(consCh)}catch(e){}consCh=null;cons=[];consNew=0;$("ccnt").hidden=true;updDot()}
   $("loginLink").textContent=isAdmin?"تسجيل خروج المالك":"دخول المالك";
   if(isAdmin&&!ordCh){
     loadOrders();
@@ -684,6 +757,9 @@ document.addEventListener("click",function(e){
   else if(d.invo){invoicePdf(d.invo,true)}
   else if(d.invs){invoicePdf(d.invs,true,true)}
   else if(d.wasend!==undefined){waOrder()}
+  else if(d.ck){ctab=d.ck;cArm=null;consRender()}
+  else if(d.cst){var cq=d.cst.split("|");sb.from("consultations").update({status:cq[1]}).eq("id",cq[0]).then(function(r){r.error?toast("ما كدرنا نحدّث الحالة"):loadCons()})}
+  else if(d.cdel){if(cArm!=d.cdel){cArm=d.cdel;consRender();return}sb.from("consultations").delete().eq("id",d.cdel).then(function(r){cArm=null;r.error?toast("ما كدرنا نحذف"):(toast("تم الحذف"),loadCons())})}
   else if(d.addhere!==undefined){openForm(null)}
   else if(d.cats!==undefined){catArm=null;catRender();$("catD").showModal()}
   else if(d.cs){catSave(d.cs)}
