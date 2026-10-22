@@ -35,6 +35,9 @@ h1 svg{flex:none}
 .ht{display:flex;flex-direction:column;gap:4px;min-width:0}
 .hn{font-family:"Cairo",Tahoma,sans-serif;font-weight:800;font-size:clamp(44px,13vw,84px);line-height:1.05;color:var(--ink)}
 .hl{font-family:"Cairo",Tahoma,sans-serif;font-weight:600;font-size:clamp(13px,3.6vw,20px);letter-spacing:.46em;color:var(--accent);text-align:right}
+.hs span{display:inline-block;opacity:0;transform:translateY(6px);transition:opacity .45s ease,transform .45s ease;white-space:pre}
+.hs span.on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.hs span{opacity:1;transform:none;transition:none}}
 .hs{font-size:clamp(13px,3.8vw,18px);color:var(--muted)}
 .cb h3,dialog h2{font-family:"Cairo",Tahoma,sans-serif}
 button,input,select{font:inherit;color:inherit}
@@ -237,6 +240,23 @@ function home(){
     h+='<section class="brand">'+mk(i,"button")+'</section>';
   });
   $("main").innerHTML=h+'</div>';
+  heroAnim();
+}
+var heroT=null;
+function heroAnim(){
+  clearInterval(heroT);
+  var el=document.querySelector(".hs");if(!el)return;
+  var words=el.textContent.split(" ");
+  el.setAttribute("aria-label",el.textContent);
+  el.innerHTML=words.map(function(w,i){return '<span aria-hidden="true">'+esc(w)+(i<words.length-1?" ":"")+'</span>'}).join("");
+  var sp=el.querySelectorAll("span"),i=0,hold=0;
+  if(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches){sp.forEach(function(x){x.classList.add("on")});return}
+  heroT=setInterval(function(){
+    if(!document.body.contains(el)){clearInterval(heroT);return}
+    if(i<sp.length){sp[i++].classList.add("on")}
+    else if(hold<8){hold++}
+    else{sp.forEach(function(x){x.classList.remove("on")});i=0;hold=0}
+  },380);
 }
 function brand(){
   var B=BR[S.b];
