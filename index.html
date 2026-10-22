@@ -56,14 +56,16 @@ main{max-width:1000px;margin:0 auto;padding:16px}
 .lead{margin:4px 0 16px;color:var(--muted)}
 .brands{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
 .brand{background:var(--surface);border:1px solid var(--line);border-radius:4px;overflow:hidden}
-.mark{display:block;width:100%;border:0;text-align:start;padding:34px 22px;cursor:pointer;font-size:38px;font-weight:700;letter-spacing:1px;direction:ltr;text-align:left}
+.mark{display:flex;align-items:center;justify-content:center;width:100%;min-height:136px;border:0;padding:22px 20px;cursor:pointer}
+.mark img{max-height:104px;max-width:72%;width:auto;height:auto;display:block}
 .bb{padding:14px 16px 16px}
 .bb p{margin:0 0 10px;color:var(--muted);font-size:14px}
 .cl{display:flex;flex-wrap:wrap;gap:8px}
 .cl button{background:transparent;border:1px solid var(--line);border-radius:6px;padding:5px 12px}
 .cl button:hover{border-color:var(--accent)}
 .bar{display:flex;gap:12px;align-items:center;margin-bottom:12px}
-.bar .mark{width:auto;padding:8px 18px;font-size:24px;border-radius:4px}
+.bar .mark{width:auto;min-height:0;padding:8px 18px;border-radius:4px;cursor:default}
+.bar .mark img{max-height:38px;max-width:140px}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px}
 .chip{white-space:nowrap;background:transparent;border:1px solid var(--line);border-radius:6px;padding:5px 12px}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -214,7 +216,7 @@ var SUPABASE_URL="https://epajpzmncscheoyljzyc.supabase.co";
 var SUPABASE_KEY="sb_publishable_jk8dC0HN2CsxLh2c0Kp-xg_JLxk5Wfg";
 /* ======================================================================= */
 
-var BR=[{n:"Fosroc",bg:"#d42027",fg:"#fff",bd:"#d42027"},{n:"Sika",bg:"#f2b705",fg:"#d10a1f",bd:"#f2b705"},{n:"Mapei",bg:"#6ec1ee",fg:"#ffffff",bd:"#6ec1ee"},{n:"Weber",bg:"#ffd400",fg:"#111",bd:"#111"},{n:"DCP",bg:"#f26a1b",fg:"#fff",bd:"#f26a1b"},{n:"Terraco",bg:"#0d2f6e",fg:"#fff",bd:"#0d2f6e"}];
+var BR=[{n:"Fosroc",bg:"#d42027",bd:"#d42027",cb:"#ffffff",f:"fosroc.png"},{n:"Sika",bg:"#f2b705",bd:"#d10a1f",cb:"#f9b500",f:"sika.png"},{n:"Mapei",bg:"#6ec1ee",bd:"#0f7bc4",cb:"#0f7bc4",f:"mapei.png"},{n:"Weber",bg:"#ffd400",bd:"#111111",cb:"#ffffff",f:"weber.png"},{n:"DCP",bg:"#f26a1b",bd:"#f26a1b",cb:"#ffffff",f:"dcp.png"},{n:"Terraco",bg:"#0d2f6e",bd:"#0d2f6e",cb:"#011689",f:"terraco.png"}];
 var CATS=["مواد عزل","لواصق","بيتومين","إيبوكسيات","مواد زرع شيش"];
 var ORD=[0,5,1,2,3,4];
 var CUR="د.ع",TITLE=document.title;
@@ -237,7 +239,7 @@ cart=lsGet("mm-cart",{});
 function saveCart(){lsSet("mm-cart",cart)}
 
 /* ---------- الصفحة الرئيسية والبراندات ---------- */
-function mk(b,tag){var B=BR[b];return '<'+tag+' class="mark" style="background:'+B.bg+';color:'+B.fg+';border-bottom:6px solid '+B.bd+'" data-b="'+b+'">'+B.n+'</'+tag+'>'}
+function mk(b,tag){var B=BR[b];return '<'+tag+' class="mark" style="background:'+B.cb+';border-bottom:6px solid '+B.bd+'" data-b="'+b+'" aria-label="'+B.n+'"><img src="img/brands/'+B.f+'" alt="'+B.n+'" draggable="false"></'+tag+'>'}
 function status(){return failed?failed:(!loaded?"جاري تحميل المنتجات…":"")}
 function home(){
   var n=all(),h='<div class="hero"><svg aria-hidden="true" viewBox="0 0 120 126" width="84" height="88"><path d="M60 4C60 4 49 15 49 21a11 11 0 0 0 22 0C71 15 60 4 60 4Z" fill="#F0B429"/><path d="M8 66C8 46 30 34 60 34C90 34 112 46 112 66Q98 58 86 66Q73 58 60 66Q47 58 34 66Q21 58 8 66Z" fill="var(--accent)"/><path d="M26 118V80L60 104L94 80V118" fill="none" stroke="var(--ink)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="ht"><div class="hn">ميركادو</div><div class="hl" dir="ltr">MIRKADO</div><div class="hs" role="text" aria-label="مواد الإنشاء والعزل بمكان واحد"><div class="tk" aria-hidden="true"><span>مواد الإنشاء والعزل بمكان واحد</span><span>مواد الإنشاء والعزل بمكان واحد</span><span>مواد الإنشاء والعزل بمكان واحد</span><span>مواد الإنشاء والعزل بمكان واحد</span><span>مواد الإنشاء والعزل بمكان واحد</span><span>مواد الإنشاء والعزل بمكان واحد</span></div></div></div></div><p class="lead">'+(status()||(n.length?"اختر البراند حتى تشوف منتجاته.":"ما أكو منتجات بعد."+(isAdmin?" اضغط «أضف منتج» وابدأ.":"")))+'</p><div class="brands">';
