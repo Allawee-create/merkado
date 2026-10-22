@@ -173,8 +173,9 @@ var SUPABASE_URL="https://epajpzmncscheoyljzyc.supabase.co";
 var SUPABASE_KEY="sb_publishable_jk8dC0HN2CsxLh2c0Kp-xg_JLxk5Wfg";
 /* ======================================================================= */
 
-var BR=[{n:"Fosroc",bg:"#d42027",fg:"#fff",bd:"#d42027"},{n:"Sika",bg:"#f2b705",fg:"#1b1b1b",bd:"#f2b705"},{n:"Mapei",bg:"#6ec1ee",fg:"#0a2a3d",bd:"#6ec1ee"},{n:"Weber",bg:"#ffd400",fg:"#111",bd:"#111"},{n:"DCP",bg:"#f26a1b",fg:"#fff",bd:"#f26a1b"},{n:"Terraco",bg:"#0d2f6e",fg:"#fff",bd:"#0d2f6e"}];
-var CATS=["مواد عزل","لواصق","بيتومين","إيبوكسيات","مواد زرع شيش"];
+var BR=[{n:"Fosroc",bg:"#d42027",fg:"#fff",bd:"#d42027"},{n:"Sika",bg:"#f2b705",fg:"#1b1b1b",bd:"#f2b705"},{n:"Mapei",bg:"#6ec1ee",fg:"#0a2a3d",bd:"#6ec1ee"},{n:"Weber",bg:"#ffd400",fg:"#111",bd:"#111"},{n:"DCP",bg:"#f26a1b",fg:"#fff",bd:"#f26a1b"}];
+var CATS=["مواد عزل","لواصق","بيتومين","إيبوكسيات","مواد زرع شيش","Terraco"];
+function catsOf(b){var a=[0,1,2,3,4];if(b==0)a.push(5);return a}
 var CUR="د.ع",TITLE=document.title;
 var sb=null,configured=SUPABASE_URL.indexOf("PASTE")<0&&SUPABASE_KEY.indexOf("PASTE")<0;
 if(configured){try{sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){sb=null}}
@@ -202,7 +203,7 @@ function home(){
   BR.forEach(function(B,i){
     var cnt=n.filter(function(p){return p.b==i}).length;
     h+='<section class="brand">'+mk(i,"button")+'<div class="bb"><p>'+cnt+' منتج</p><div class="cl">'+
-    CATS.map(function(c,k){return '<button data-bc="'+i+','+k+'">'+c+'</button>'}).join("")+'</div></div></section>';
+    catsOf(i).map(function(k){return '<button data-bc="'+i+','+k+'">'+CATS[k]+'</button>'}).join("")+'</div></div></section>';
   });
   $("main").innerHTML=h+'</div>';
 }
@@ -211,7 +212,7 @@ function brand(){
   var h='<div class="bar"><button class="btn ghost" data-home>كل البراندات</button>'+mk(S.b,"div")+'</div>';
   h+='<input id="q" type="search" placeholder="ابحث داخل '+B.n+'…" aria-label="بحث" value="'+esc(S.q)+'"><div class="chips" style="margin-top:10px">';
   h+='<button class="chip" aria-pressed="'+(S.c==-1)+'" data-c="-1">الكل</button>';
-  CATS.forEach(function(c,i){h+='<button class="chip" aria-pressed="'+(S.c==i)+'" data-c="'+i+'">'+c+'</button>'});
+  catsOf(S.b).forEach(function(i){h+='<button class="chip" aria-pressed="'+(S.c==i)+'" data-c="'+i+'">'+CATS[i]+'</button>'});
   h+='</div><div class="grid" id="grid"></div><div class="empty" id="empty" hidden>ما أكو منتج مطابق. جرّب كلمة ثانية أو قسم ثاني.</div>';
   $("main").innerHTML=h;
   $("q").addEventListener("input",function(e){S.q=e.target.value.trim();grid()});
@@ -256,7 +257,7 @@ function openForm(p){
   editing=p?p.id:null;delArm=false;
   $("ftitle").textContent=p?"تعديل المنتج":"أضف منتج للبيع";
   $("n").value=p?p.n:"";$("p").value=p?p.p:"";$("u").value=p?p.u:"";
-  $("b").value=p?p.b:(S.b>=0?S.b:0);$("c").value=p?p.c:(S.c>=0?S.c:0);
+  $("b").value=p?p.b:(S.b>=0?S.b:0);fillCats();$("c").value=p?p.c:(S.c>=0?S.c:0);
   $("del").hidden=!p;$("del").textContent="حذف المنتج";
   $("addD").showModal();
 }
@@ -434,7 +435,8 @@ document.addEventListener("click",function(e){
 $("cartBtn").onclick=function(){lines();$("cartD").showModal()};
 $("addBtn").onclick=function(){openForm(null)};
 $("b").innerHTML=BR.map(function(b,i){return '<option value="'+i+'">'+b.n+'</option>'}).join("");
-$("c").innerHTML=CATS.map(function(c,i){return '<option value="'+i+'">'+c+'</option>'}).join("");
+function fillCats(){var cur=$("c").value;$("c").innerHTML=catsOf(+$("b").value).map(function(i){return '<option value="'+i+'">'+CATS[i]+'</option>'}).join("");if(cur&&catsOf(+$("b").value).indexOf(+cur)>-1)$("c").value=cur}
+fillCats();$("b").addEventListener("change",fillCats);
 
 render();refresh();
 if(!sb){
