@@ -88,6 +88,12 @@ main{max-width:1000px;margin:0 auto;padding:16px}
 .oh{display:flex;justify-content:space-between;gap:8px;font-size:15px}
 .oh span,.on{color:var(--muted);font-size:13px}
 .oi{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.dsc{display:flex;gap:8px;align-items:center;padding:6px 0}
+.dsc span{font-weight:700}
+.dsc input{width:110px;padding:7px 10px}
+.dsc select{width:auto;padding:7px 8px}
+.dsc .btn{padding:7px 14px}
+.disc{color:var(--accent)}
 .ot{display:flex;justify-content:space-between;font-weight:700;padding:8px 0}
 .empty{color:var(--muted);padding:40px 0;text-align:center}
 dialog{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:min(440px,92vw);padding:18px;max-height:88vh}
@@ -358,18 +364,19 @@ function showDone(o,ph){
   $("doneB").innerHTML='<p><b class="badge b-new">'+MST.new+'</b></p><div class="codebig">'+esc(o.code)+'</div><p class="on" style="text-align:center">رقم طلبك. احتفظ فيه.</p>'+itemsHtml(o.items)+'<div class="ot"><span>الإجمالي</span><span>'+fmt(o.total)+'</span></div><p class="on">راح نتواصل وياك على '+esc(ph)+' حتى نأكد الطلب. تكدر تتابع حالته من زر «طلباتي».</p>';
   $("doneD").showModal();
 }
+function totHtml(o){var d=Number(o.discount||0);return d>0?'<div class="ot"><span>الإجمالي</span><span>'+fmt(o.total)+'</span></div><div class="ot disc"><span>الخصم</span><span>− '+fmt(d)+'</span></div><div class="ot"><span>المطلوب</span><span>'+fmt(Math.max(0,o.total-d))+'</span></div>':'<div class="ot"><span>الإجمالي</span><span>'+fmt(o.total)+'</span></div>'}
 function trk(st){var n=st=="new"?1:st=="confirmed"?2:st=="delivered"?3:0;if(!n)return "";return '<div class="trk"><i class="on"></i><i class="'+(n>=2?"on":"")+'"></i><i class="'+(n>=3?"on":"")+'"></i></div><div class="trkl"><span>استلمنا الطلب</span><span>قيد التجهيز</span><span>تم التسليم</span></div>'}
 function myRender(){
   var list=mine.slice().sort(function(x,y){return y.t-x.t});
   $("myL").innerHTML=list.length?list.map(function(o){
     var d=new Date(o.t).toLocaleString("en-GB",{dateStyle:"short",timeStyle:"short"});
-    return '<div class="ord"><div class="oh"><b class="badge b-'+o.status+'">'+(MST[o.status]||o.status)+'</b><span>#'+esc(o.code)+' · '+d+'</span></div>'+trk(o.status)+itemsHtml(o.items)+'<div class="ot"><span>الإجمالي</span><span>'+fmt(o.total)+'</span></div></div>'
+    return '<div class="ord"><div class="oh"><b class="badge b-'+o.status+'">'+(MST[o.status]||o.status)+'</b><span>#'+esc(o.code)+' · '+d+'</span></div>'+trk(o.status)+itemsHtml(o.items)+totHtml(o)+'</div>'
   }).join(""):'<div class="empty">ما عندك طلبات بعد. إذا عندك رقم طلب اكتبه فوق مع رقم هاتفك.</div>';
 }
 function trackAll(first){
   if(!sb||!MY.length){mine=[];myRender();return Promise.resolve()}
   return Promise.all(MY.map(function(m){return sb.rpc("track_order",{p_code:m.code,p_phone:m.phone}).then(function(r){return r.data||null},function(){return null})})).then(function(res){
-    var arr=res.filter(Boolean).map(function(o){return {code:o.code,status:o.status,items:o.items,total:Number(o.total),t:Date.parse(o.created_at)}});
+    var arr=res.filter(Boolean).map(function(o){return {code:o.code,status:o.status,items:o.items,total:Number(o.total),discount:Number(o.discount||0),t:Date.parse(o.created_at)}});
     arr.forEach(function(o){
       if(!first&&prevSt[o.code]&&prevSt[o.code]!=o.status&&MSG[o.status])toast(MSG[o.status],6000);
       prevSt[o.code]=o.status;
@@ -399,7 +406,7 @@ setInterval(function(){
 },20000);
 
 /* ---------- المالك: الدخول والطلبات ---------- */
-function mapO(r){return {id:r.id,code:r.code,name:r.name,phone:r.phone,note:r.address,items:r.items,total:Number(r.total),status:r.status,t:Date.parse(r.created_at)}}
+function mapO(r){return {id:r.id,code:r.code,name:r.name,phone:r.phone,note:r.address,items:r.items,total:Number(r.total),status:r.status,discount:Number(r.discount||0),t:Date.parse(r.created_at)}}
 var seen={};lsGet("mm-seen",[]).forEach(function(k){seen[k]=1});
 var notified={};
 function markSeen(){orders.forEach(function(o){seen[o.id]=1});lsSet("mm-seen",Object.keys(seen).slice(-500));document.title=TITLE}
@@ -429,13 +436,23 @@ function ordersRender(){
             o.status=="confirmed"?ab("delivered","تم التسليم","btn")+ab("cancelled","إلغاء"):
             o.status=="delivered"?ab("confirmed","رجّعه لقيد التجهيز"):ab("new","رجّعه لجديد");
     act=act.split("ID|").join(o.id+"|");
-    return '<div class="ord"><div class="oh"><b>'+esc(o.name)+'</b><span>#'+esc(o.code)+' · '+d+'</span></div><div><a href="tel:'+esc(String(o.phone).replace(/[^0-9+]/g,""))+'">'+esc(o.phone)+'</a></div>'+itemsHtml(o.items)+(o.note?'<div class="on">'+esc(o.note)+'</div>':'')+'<div class="ot"><span>الإجمالي</span><span>'+fmt(o.total)+'</span></div><div class="row">'+act+'</div></div>'
+    return '<div class="ord"><div class="oh"><b>'+esc(o.name)+'</b><span>#'+esc(o.code)+' · '+d+'</span></div><div><a href="tel:'+esc(String(o.phone).replace(/[^0-9+]/g,""))+'">'+esc(o.phone)+'</a></div>'+itemsHtml(o.items)+(o.note?'<div class="on">'+esc(o.note)+'</div>':'')+totHtml(o)+((o.status=="new"||o.status=="confirmed")?'<div class="dsc"><span>خصم</span><input type="number" min="0" step="any" inputmode="decimal" id="dv-'+o.id+'" placeholder="0" aria-label="قيمة الخصم"'+(o.discount>0?' value="'+o.discount+'"':'')+'><select id="dt-'+o.id+'" aria-label="نوع الخصم"><option value="a">د.ع</option><option value="p">%</option></select><button class="btn ghost" data-od="'+o.id+'">طبّق</button></div>':'')+'<div class="row">'+act+'</div></div>'
   }).join(""):'<div class="empty">ما أكو طلبات '+ST[otab]+'.</div>';
 }
 function loadOrders(){
   return sb.from("orders").select("*").order("created_at",{ascending:false}).limit(500).then(function(r){
     if(r.error)return;
     orders=r.data.map(mapO);ordersRender();notifyNew();
+  });
+}
+function setDiscount(id){
+  var o=orders.filter(function(x){return x.id==id})[0];if(!o)return;
+  var v=parseFloat(digits($("dv-"+id).value))||0,type=$("dt-"+id).value;
+  var amt=type=="p"?Math.round(o.total*v/100):Math.round(v);
+  if(amt<0)amt=0;if(amt>o.total)amt=o.total;
+  sb.from("orders").update({discount:amt}).eq("id",id).then(function(r){
+    if(r.error){toast(String(r.error.message||"").indexOf("discount")>-1?"لازم تفعّل ميزة الخصم بقاعدة البيانات أولاً":"ما كدرنا نطبّق الخصم. جرّب مرة ثانية.",5000);return}
+    toast(amt>0?"تم تطبيق الخصم":"تم إلغاء الخصم");loadOrders();
   });
 }
 function setStatus(a){
@@ -481,6 +498,7 @@ document.addEventListener("click",function(e){
   else if(d.c!==undefined){S.c=+d.c;brand();window.scrollTo(0,0)}
   else if(d.ot){otab=d.ot;ordersRender()}
   else if(d.os){setStatus(d.os.split("|"))}
+  else if(d.od){setDiscount(d.od)}
   else if(d.edit){openEdit(d.edit)}
   else if(d.del!==undefined){doDelete()}
   else if(d.add){cart[d.add]=(cart[d.add]||0)+1;refresh();toast("أُضيف للسلة")}
