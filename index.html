@@ -598,7 +598,7 @@ $("cuEF").addEventListener("submit",function(e){
     $("cuE").close();toast(cuEditId?"تم حفظ التعديل":"تم التسجيل");loadCust();
   });
 });
-$("accBtn").onclick=function(){menuShow(false);accV=-1;accQ="";accK="all";accArm=null;$("accQ").value="";$("accD").showModal();accRender();loadLedger()};
+$("accBtn").onclick=function(){menuShow(false);accV=-1;accQ="";accK="all";accArm=null;$("accQ").value="";$("accD").showModal();accRender();loadLedger();loadCust()};
 $("pc").addEventListener("input",pcHint);$("p").addEventListener("input",pcHint);
 $("accQ").addEventListener("input",function(){accQ=$("accQ").value;accArm=null;accRender()});
 $("entF").addEventListener("submit",function(e){
@@ -707,7 +707,7 @@ function cuRender(){
 function loadCust(){
   return sb.from("cust_ledger").select("*").order("day",{ascending:false}).order("id",{ascending:false}).limit(5000).then(function(r){
     if(r.error){cuOk=!/relation|does not exist|schema cache/i.test(String(r.error.message||""));custL=[];cuRender();return}
-    cuOk=true;custL=r.data.map(function(x){return {id:x.id,phone:x.phone,name:x.name||"",kind:x.kind,day:x.day,amount:Number(x.amount),note:x.note||""}});cuRender();
+    cuOk=true;custL=r.data.map(function(x){return {id:x.id,phone:x.phone,name:x.name||"",kind:x.kind,day:x.day,amount:Number(x.amount),note:x.note||""}});cuRender();accRender();
   });
 }
 function cuEntry(kind,e){
@@ -771,6 +771,8 @@ function cuSetRange(k){
 /* ---------- الحسابات ---------- */
 var ledger=[],accOk=true,accV=-1,accQ="",accK="all",accEdit=null,accArm=null,accAddB=-1;
 var KL={buy:"شراء",pay:"دفعة",credit:"رصيد لي"};
+function custGross(){var s=0;orders.forEach(function(o){if(o.status=="confirmed"||o.status=="delivered")s+=Math.max(0,o.total-(o.discount||0))});return s}
+function custOwed(){var m=cuBuild(),s=0;Object.keys(m).forEach(function(k){if(m[k].bal>0)s+=m[k].bal});return s}
 function monthStart(){var d=new Date();return new Date(d.getFullYear(),d.getMonth(),1).getTime()}
 function profitSince(t0){var s=0;orders.forEach(function(o){if((o.status=="confirmed"||o.status=="delivered")&&o.cost!=null&&o.t>=t0)s+=o.total-(o.discount||0)-o.cost});return s}
 function accBal(b){var r={buy:0,pay:0,credit:0};ledger.forEach(function(e){if(b<0||e.brand==b)r[e.kind]+=e.amount});r.bal=r.buy-r.pay-r.credit;return r}
@@ -790,7 +792,7 @@ function accRender(){
     var t=accBal(-1),pos=0,neg=0;
     BR.forEach(function(x,i){var b=accBal(i).bal;if(b>0)pos+=b;else neg+=-b});
     if(!accQ){
-      sum='<div class="acc-top"><div class="acc-box"><small>مجموع اللي يطلبوني</small><b class="neg">'+fmt(pos)+'</b></div><div class="acc-box"><small>مجموع اللي اطلبهم</small><b class="pos">'+fmt(neg)+'</b></div><div class="acc-box"><small>ربح هذا الشهر</small><b class="pos">'+fmt(profitSince(monthStart()))+'</b></div><div class="acc-box"><small>ربح كل الطلبات</small><b class="pos">'+fmt(profitSince(0))+'</b></div></div><div class="nt" style="color:var(--muted);margin:-4px 0 10px">الربح = بيع بعد الخصم − سعر الشراء، للطلبات المؤكدة اللي سعر شرائها معروف.</div>';
+      sum='<div class="acc-top"><div class="acc-box"><small>مجموع اللي يطلبوني</small><b class="neg">'+fmt(pos)+'</b></div><div class="acc-box"><small>مجموع اللي اطلبهم (طلبات الزبائن المؤكدة)</small><b class="pos">'+fmt(custGross())+'</b><small>المتبقي بعد التسديد: '+fmt(custOwed())+'</small></div><div class="acc-box"><small>ربح هذا الشهر</small><b class="pos">'+fmt(profitSince(monthStart()))+'</b></div><div class="acc-box"><small>ربح كل الطلبات</small><b class="pos">'+fmt(profitSince(0))+'</b></div></div><div class="nt" style="color:var(--muted);margin:-4px 0 10px">الربح = بيع بعد الخصم − سعر الشراء، للطلبات المؤكدة اللي سعر شرائها معروف.</div>';
       list=ORD.map(function(i){var B=BR[i],r=accBal(i);
         return '<button class="acc-card" data-accb="'+i+'"><span class="acc-dot" style="background:'+B.bg+'"></span><span class="m"><b>'+B.n+'</b><small>مشتريات '+fmt(r.buy)+' · مدفوع '+fmt(r.pay)+(r.credit?' · رصيد لي '+fmt(r.credit):'')+'</small></span>'+balHtml(r.bal,true)+'</button>'}).join("");
     }else{
