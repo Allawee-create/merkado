@@ -157,6 +157,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
     <button class="mi" id="ordBtn" hidden>الطلبات<b id="ocnt" hidden></b></button>
     <button class="mi" id="addBtn" hidden>أضف منتج</button>
     <a class="mi" id="callBtn" href="tel:07700081081">اتصل بنا</a>
+    <button class="mi" id="aboutBtn">من نحن</button>
   </div>
 </header>
 <main id="main"></main>
@@ -185,6 +186,13 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
   <h2>وصل طلبك</h2>
   <div id="doneB"></div>
   <div class="row" style="margin-top:12px"><button class="btn" data-close style="flex:1">تمام</button></div>
+</dialog>
+
+<dialog id="aboutD">
+  <h2>من نحن</h2>
+  <p style="line-height:1.9;margin:0 0 10px">ميركادو إحدى العلامات التجارية التابعة لشركة <b>قمة العز للمقاولات العامة</b>، شركة عراقية متخصصة بكيمياويات البناء.</p>
+  <p style="line-height:1.9;margin:0;color:var(--muted)">نهدف إلى جعل تجربتكم في استخدام حلول البناء سلسة وسريعة.</p>
+  <div class="row" style="margin-top:14px"><button class="btn ghost" data-close style="flex:1">إغلاق</button></div>
 </dialog>
 
 <dialog id="myD">
@@ -454,6 +462,7 @@ $("menuBtn").onclick=function(e){e.stopPropagation();menuShow($("menu").hidden)}
 document.addEventListener("click",function(e){if(!$("menu").hidden&&!$("menu").contains(e.target))menuShow(false)});
 document.addEventListener("keydown",function(e){if(e.key==="Escape")menuShow(false)});
 $("menu").addEventListener("click",function(){menuShow(false)});
+$("aboutBtn").onclick=function(){menuShow(false);$("aboutD").showModal()};
 $("myBtn").onclick=function(){trackAll(true);myRender();$("myD").showModal()};
 $("tf").addEventListener("submit",function(e){
   e.preventDefault();
