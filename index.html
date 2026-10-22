@@ -310,7 +310,7 @@ $("f").addEventListener("submit",function(e){
   }).then(function(r){
     if(r.error){toast(String(r.error.message||"").indexOf("image")>-1?"لازم تفعّل ميزة الصور بقاعدة البيانات أولاً":"ما كدرنا نحفظ. تأكد إنك داخل بحساب المالك.");return}
     var was=editing;$("addD").close();toast(was?"تم حفظ التعديل":"تمت إضافة المنتج");loadProducts();
-  }).catch(function(){toast("ما كدرنا نرفع الصورة. جرّب صورة ثانية.")});
+  }).catch(function(e){var m=e&&e.message?e.message:"";toast(/bucket|not found/i.test(m)?"ما أكو مكان للصور بقاعدة البيانات. شغّل سكربت الصور بـ Supabase.":/row-level|policy|unauthor|jwt/i.test(m)?"ما عندك صلاحية. سجّل دخول المالك من جديد.":"ما كدرنا نرفع الصورة"+(m?" ("+m.slice(0,60)+")":"")+".",5000)});
 });
 
 /* ---------- طلب الزبون (بدون حساب) ---------- */
