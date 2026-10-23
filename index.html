@@ -1065,8 +1065,8 @@ function retPdf(id){
 
 function loadLib(src){return new Promise(function(res,rej){var el=document.createElement("script");el.src=src;el.onload=res;el.onerror=function(){el.remove();rej(new Error("load"))};document.head.appendChild(el)})}
 function libs(){
-  var a=window.html2canvas?Promise.resolve():loadLib("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
-  return a.then(function(){return window.jspdf?0:loadLib("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")});
+  var a=window.html2canvas?Promise.resolve():loadLib("lib/html2canvas.min.js").catch(function(){return loadLib("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js")});
+  return a.then(function(){return window.jspdf?0:loadLib("lib/jspdf.umd.min.js").catch(function(){return loadLib("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")})});
 }
 function invoiceHtml(v){
   var d=Number(v.discount||0),net=Math.max(0,v.total-d);
