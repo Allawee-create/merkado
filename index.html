@@ -1035,7 +1035,7 @@ function retHtml(o){
   var h=l.map(function(r){return '<div class="ot disc"><span>مردود #'+r.id+' · '+(r.items||[]).map(function(x){return esc(x.n)+' ×'+x.q}).join("، ")+'</span><span>− '+fmt(r.value)+'</span></div><div class="row" style="margin-bottom:6px"><button class="btn ghost" data-rtp="'+r.id+'" style="flex:1">طباعة مردود بيع</button><button class="btn danger" data-rtd="'+r.id+'">'+(retArm==r.id?"اضغط للتأكيد":"إلغاء المردود")+'</button></div>'}).join("");
   return h;
 }
-function retBtn(o){return (isAdmin&&(o.status=="confirmed"||o.status=="delivered"))?'<button class="btn ghost" data-rt="'+o.id+'" style="flex:1">مردود مواد</button>':''}
+function retBtn(o){return (isAdmin&&(o.status=="confirmed"||o.status=="delivered"))?'<button class="btn" data-rt="'+o.id+'" style="flex:1;background:#c62828;border-color:#c62828;color:#fff">مردود مواد</button>':''}
 function retOpen(id){
   var o=orders.filter(function(x){return x.id==id})[0];if(!o)return;retO=o;
   var dn=retDone(o);
