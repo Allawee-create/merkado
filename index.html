@@ -543,13 +543,15 @@ $("cf").addEventListener("submit",function(e){
   e.preventDefault();
   if($("cf").querySelector(".hpf").value){toast("تم");return}
   var nm=$("cn").value.trim(),ph=digits($("cp").value.trim()),ad=$("cnote").value.trim();
+  if(ph.replace(/\D/g,"").length<7){toast("اكتب رقم هاتف صحيح (7 أرقام على الأقل)",4000);$("cp").focus();return}
+  if(!nm||!ad){toast("اكتب الاسم والعنوان");return}
   var items=[];
   all().forEach(function(p){var q=cart[p.id];if(q)items.push({id:p.id,q:q})});
   if(!items.length||!sb)return;
   $("csend").disabled=true;
   sb.rpc("create_order",{p_name:nm,p_phone:ph,p_address:ad,p_items:items}).then(function(r){
     $("csend").disabled=false;
-    if(r.error||!r.data){toast(r.error&&/rate_limited/.test(String(r.error.message||""))?"عدد الطلبات من رقمك كثير خلال وقت قصير. جرّب بعد شوي أو اتصل بنا.":"ما كدرنا نرسل الطلب. جرّب مرة ثانية.",5000);return}
+    if(r.error||!r.data){var em=String(r.error&&r.error.message||"");toast(/rate_limited/.test(em)?"عدد الطلبات من رقمك كثير خلال وقت قصير. جرّب بعد شوي أو اتصل بنا.":/invalid phone/.test(em)?"رقم الهاتف غير صحيح":/invalid address/.test(em)?"اكتب العنوان":/invalid name/.test(em)?"اكتب الاسم":"ما كدرنا نرسل الطلب. جرّب مرة ثانية.",5000);return}
     var o=r.data;
     CUST={n:nm,p:ph,a:ad};lsSet("mm-cust",CUST);
     MY.push({code:o.code,phone:ph,n:nm,a:ad});lsSet("mm-my",MY.slice(-30));lastDone={o:o,n:nm,a:ad,ph:ph};
