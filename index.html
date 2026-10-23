@@ -255,6 +255,16 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
   <div class="row" style="margin-top:12px"><button class="btn ghost" data-close style="flex:1">إغلاق</button></div>
 </dialog>
 
+<dialog id="retD">
+  <h2 id="retT">مردود بيع</h2>
+  <div class="on" style="margin-bottom:8px">حدد كمية كل مادة راجعة. تنزل من حساب الزبون وترجع لحساب البراند تلقائياً.</div>
+  <form id="retF">
+    <div id="retL"></div>
+    <label for="retN">ملاحظة (اختياري)</label><input id="retN" maxlength="300" autocomplete="off">
+    <div class="row" style="margin-top:14px"><button class="btn" style="flex:1" id="retOk">تسجيل المردود</button><button type="button" class="btn ghost" data-close>إلغاء</button></div>
+  </form>
+</dialog>
+
 <dialog id="stD">
   <div class="row" style="margin-bottom:10px"><h2 style="margin:0;flex:1">الموظفين</h2><button class="btn ghost" data-close>إغلاق</button></div>
   <div class="on" style="margin-bottom:10px">1) أنشئ المستخدم بـ Supabase ← Authentication ← Users ← Add user (إيميل + باسوورد، فعّل Auto Confirm). 2) سجّل نفس الإيميل هنا وحدد الصلاحية.</div>
@@ -404,7 +414,7 @@ var CUR="د.ع",TITLE=document.title;
 var sb=null,configured=SUPABASE_URL.indexOf("PASTE")<0&&SUPABASE_KEY.indexOf("PASTE")<0;
 if(configured){try{sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){sb=null}}
 var role=null,isAdmin=false,loaded=false,failed="",products=[],cart={},S={b:-1,c:-1,q:""},editing=null,delArm=false;
-var orders=[],otab="new",ordCh=null;
+var orders=[],otab="new",ordCh=null,rets=[];
 var ST={new:"جديدة",confirmed:"قيد التجهيز",delivered:"مسلّمة",cancelled:"ملغية"};
 var MST={new:"بانتظار التأكيد",confirmed:"قيد التجهيز",delivered:"تم التسليم",cancelled:"ملغي"};
 var MSG={confirmed:"تم تأكيد طلبك وهو الحين قيد التجهيز",delivered:"تم تسليم طلبك",cancelled:"تم إلغاء طلبك"};
@@ -704,7 +714,7 @@ function notifyNew(){
 }
 /* ---------- حسابات الزبائن ---------- */
 var custL=[],cuOk=true,cuQ="",cuK=null,cuF="",cuTo="",cuArm=null,cuEditId=null,cuKind="pay";
-var CL={order:"طلب",pay:"تسديد",debit:"دين سابق"};
+var CL={order:"طلب",pay:"تسديد",debit:"دين سابق",ret:"مردود بيع"};
 function nf(x){return Number(x).toLocaleString("en-US",{maximumFractionDigits:2})}
 function pk(ph){var d=digits(String(ph||"")).replace(/\D/g,"");if(d.indexOf("964")==0)d="0"+d.slice(3);else if(d.length==10&&d.charAt(0)=="7")d="0"+d;return d}
 function cuBuild(){
@@ -712,8 +722,9 @@ function cuBuild(){
   function g(k,n,ph){return m[k]||(m[k]={key:k,name:n||"",phone:k,ev:[],bal:0,last:0,tot:0,paid:0})}
   orders.forEach(function(o){var k=pk(o.phone);if(!k)return;var c=g(k,o.name,o.phone);if(o.t>c.last){c.last=o.t;c.name=o.name||c.name}
     if(o.status=="confirmed"||o.status=="delivered")c.ev.push({t:o.t,type:"order",code:o.code,amt:Math.max(0,o.total-(o.discount||0))})});
+  rets.forEach(function(x){var k=pk(x.phone);if(!k)return;var c=g(k,x.name,x.phone);c.ev.push({t:x.t,type:"ret",code:x.code,amt:x.value,note:"مردود #"+x.id})});
   custL.forEach(function(x){var k=pk(x.phone);if(!k)return;var c=g(k,x.name,x.phone);if(!c.last&&x.name)c.name=x.name;c.ev.push({t:Date.parse(x.day+"T12:00:00"),type:x.kind,amt:x.amount,note:x.note,id:x.id})});
-  Object.keys(m).forEach(function(k){var c=m[k];c.ev.sort(function(a,b){return a.t-b.t});var b=0;c.ev.forEach(function(e){if(e.type=="pay"){b-=e.amt;c.paid+=e.amt}else{b+=e.amt;c.tot+=e.amt}e.run=b});c.bal=b});
+  Object.keys(m).forEach(function(k){var c=m[k];c.ev.sort(function(a,b){return a.t-b.t});var b=0;c.ev.forEach(function(e){if(e.type=="pay"){b-=e.amt;c.paid+=e.amt}else if(e.type=="ret"){b-=e.amt;c.tot-=e.amt}else{b+=e.amt;c.tot+=e.amt}e.run=b});c.bal=b});
   return m;
 }
 function cuBalHtml(x,big){var t=x>0?'<span class="neg">عليه '+fmt(x)+'</span>':x<0?'<span class="pos">له '+fmt(-x)+'</span>':'<span>مسدّد</span>';return big?'<b>'+t+'</b>':t}
@@ -750,7 +761,7 @@ function cuRender(){
       '<div class="nt" style="margin-bottom:6px;color:var(--muted)">الرصيد قبل الفترة: '+fmt(v.open)+'</div>';
     list=v.rows.length?v.rows.slice().reverse().map(function(e){
       var man=e.id!=null;
-      return '<div class="ent"><div class="l1"><span><span class="tg '+(e.type=="pay"?"pay":"buy")+'">'+CL[e.type]+(e.code?' #'+esc(e.code):'')+'</span> '+dmy(e.t)+'</span><b class="'+(e.type=="pay"?"pos":"neg")+'">'+(e.type=="pay"?"−":"+")+nf(e.amt)+'</b></div><div class="nt">'+(e.note?esc(e.note)+' · ':'')+'الرصيد: '+nf(e.run)+'</div>'+
+      return '<div class="ent"><div class="l1"><span><span class="tg '+(e.type=="pay"||e.type=="ret"?"pay":"buy")+'">'+CL[e.type]+(e.code?' #'+esc(e.code):'')+'</span> '+dmy(e.t)+'</span><b class="'+(e.type=="pay"||e.type=="ret"?"pos":"neg")+'">'+(e.type=="pay"||e.type=="ret"?"−":"+")+nf(e.amt)+'</b></div><div class="nt">'+(e.note?esc(e.note)+' · ':'')+'الرصيد: '+nf(e.run)+'</div>'+
         (man&&isAdmin?'<div class="ac"><button class="btn ghost" data-cux="'+e.id+'">تعديل</button><button class="btn danger" data-cdl="'+e.id+'">'+(cuArm==e.id?"اضغط للتأكيد":"حذف")+'</button></div>':'')+'</div>';
     }).join(""):'<div class="empty">ما أكو حركات بهذه الفترة.</div>';
     list+='<div class="nt" style="margin-top:6px;color:var(--muted)">الرصيد بنهاية الفترة: <b>'+fmt(v.close)+'</b></div>';
@@ -773,7 +784,7 @@ function cuEntry(kind,e){
 function stmtHtml(c,v){
   var td='padding:8px 10px;border-bottom:1px solid #dde4e3;';
   var rows=v.rows.map(function(e,k){
-    var dbt=e.type!="pay",lab=CL[e.type]+(e.code?" #"+e.code:"")+(e.note?" — "+e.note:"");
+    var dbt=e.type!="pay"&&e.type!="ret",lab=CL[e.type]+(e.code?" #"+e.code:"")+(e.note?" — "+e.note:"");
     return '<tr style="background:'+(k%2?'#f4f7f6':'#fff')+'"><td style="'+td+'direction:ltr;text-align:right">'+dmy(e.t)+'</td><td style="'+td+'">'+esc(lab)+'</td><td style="'+td+'text-align:left;direction:ltr">'+(dbt?nf(e.amt):"")+'</td><td style="'+td+'text-align:left;direction:ltr">'+(dbt?"":nf(e.amt))+'</td><td style="'+td+'text-align:left;direction:ltr;font-weight:700">'+nf(e.run)+'</td></tr>'}).join("");
   var mark='<svg viewBox="0 0 120 126" width="52" height="55"><path d="M60 4C60 4 49 15 49 21a11 11 0 0 0 22 0C71 15 60 4 60 4Z" fill="#E0A110"/><path d="M8 66C8 46 30 34 60 34C90 34 112 46 112 66Q98 58 86 66Q73 58 60 66Q47 58 34 66Q21 58 8 66Z" fill="#1F8E85"/><path d="M26 118V80L60 104L94 80V118" fill="none" stroke="#0F1A21" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ch='font-family:Cairo,Tahoma,sans-serif;font-weight:800;';
@@ -839,7 +850,7 @@ function cuSetRange(k){
 /* ---------- الحسابات ---------- */
 var ledger=[],accOk=true,accV=-1,accQ="",accK="all",accEdit=null,accArm=null,accAddB=-1;
 var KL={buy:"شراء",pay:"دفعة",credit:"رصيد لي"};
-function custGross(){var s=0;orders.forEach(function(o){if(o.status=="confirmed"||o.status=="delivered")s+=Math.max(0,o.total-(o.discount||0))});return s}
+function custGross(){var s=0;rets.forEach(function(r){s-=r.value});orders.forEach(function(o){if(o.status=="confirmed"||o.status=="delivered")s+=Math.max(0,o.total-(o.discount||0))});return s}
 function custOwed(){var m=cuBuild(),s=0;Object.keys(m).forEach(function(k){if(m[k].bal>0)s+=m[k].bal});return s}
 function bkCheck(){
   var last=Number(lsGet("mm-bk",0))||0;
@@ -896,7 +907,7 @@ function bkSave(){
   else{var a=document.createElement("a");a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(a.href)},2000);done()}
 }
 function monthStart(){var d=new Date();return new Date(d.getFullYear(),d.getMonth(),1).getTime()}
-function profitSince(t0){var s=0;orders.forEach(function(o){if((o.status=="confirmed"||o.status=="delivered")&&o.cost!=null&&o.t>=t0)s+=o.total-(o.discount||0)-o.cost});return s}
+function profitSince(t0){var s=0;rets.forEach(function(r){var o=orders.filter(function(x){return x.id==r.oid})[0];if(o&&o.cost!=null&&r.t>=t0)s-=r.value-r.cost});orders.forEach(function(o){if((o.status=="confirmed"||o.status=="delivered")&&o.cost!=null&&o.t>=t0)s+=o.total-(o.discount||0)-o.cost});return s}
 function accBal(b){var r={buy:0,pay:0,credit:0};ledger.forEach(function(e){if(b<0||e.brand==b)r[e.kind]+=e.amount});r.bal=r.buy-r.pay-r.credit;return r}
 function balHtml(x,big){var t=x>0?'<span class="neg">يطلبني '+fmt(x)+'</span>':x<0?'<span class="pos">اطلبه '+fmt(-x)+'</span>':'<span>مصفّى</span>';return big?'<b>'+t+'</b>':t}
 function accMatch(e,q){
@@ -981,13 +992,13 @@ function ordersRender(){
             o.status=="confirmed"?ab("delivered","تم التسليم","btn")+ab("cancelled","إلغاء"):
             o.status=="delivered"?ab("confirmed","رجّعه لقيد التجهيز"):ab("new","رجّعه لجديد");
     act=act.split("ID|").join(o.id+"|");
-    return '<div class="ord"><div class="oh"><b>'+esc(o.name)+'</b><span>فاتورة #'+esc(o.code)+' · '+d+'</span></div><div><a href="tel:'+esc(String(o.phone).replace(/[^0-9+]/g,""))+'">'+esc(o.phone)+'</a></div>'+itemsHtml(o.items)+(o.note?'<div class="on">'+esc(o.note)+'</div>':'')+totHtml(o)+(o.cost!=null?'<div class="ot"><span>الربح التقريبي</span><span class="'+(o.total-o.discount-o.cost<0?'neg':'pos')+'">'+fmt(o.total-o.discount-o.cost)+'</span></div>':'')+((isAdmin&&(o.status=="new"||o.status=="confirmed"))?'<div class="dsc"><span>خصم</span><input type="number" min="0" step="any" inputmode="decimal" id="dv-'+o.id+'" placeholder="0" aria-label="قيمة الخصم"'+(o.discount>0?' value="'+o.discount+'"':'')+'><select id="dt-'+o.id+'" aria-label="نوع الخصم"><option value="a">د.ع</option><option value="p">%</option></select><button class="btn ghost" data-od="'+o.id+'">طبّق</button></div>':'')+'<div class="row">'+act+'</div><button class="btn ghost" data-invo="'+o.id+'" style="width:100%;margin-top:8px">فاتورة PDF</button></div>'
+    return '<div class="ord"><div class="oh"><b>'+esc(o.name)+'</b><span>فاتورة #'+esc(o.code)+' · '+d+'</span></div><div><a href="tel:'+esc(String(o.phone).replace(/[^0-9+]/g,""))+'">'+esc(o.phone)+'</a></div>'+itemsHtml(o.items)+(o.note?'<div class="on">'+esc(o.note)+'</div>':'')+totHtml(o)+(o.cost!=null?'<div class="ot"><span>الربح التقريبي</span><span class="'+(o.total-o.discount-o.cost<0?'neg':'pos')+'">'+fmt(o.total-o.discount-o.cost)+'</span></div>':'')+((isAdmin&&(o.status=="new"||o.status=="confirmed"))?'<div class="dsc"><span>خصم</span><input type="number" min="0" step="any" inputmode="decimal" id="dv-'+o.id+'" placeholder="0" aria-label="قيمة الخصم"'+(o.discount>0?' value="'+o.discount+'"':'')+'><select id="dt-'+o.id+'" aria-label="نوع الخصم"><option value="a">د.ع</option><option value="p">%</option></select><button class="btn ghost" data-od="'+o.id+'">طبّق</button></div>':'')+retHtml(o)+'<div class="row">'+act+'</div><button class="btn ghost" data-invo="'+o.id+'" style="width:100%;margin-top:8px">فاتورة PDF</button></div>'
   }).join(""):'<div class="empty">ما أكو طلبات '+ST[otab]+'.</div>';
 }
 function loadOrders(){
   return (isAdmin?sb.from("orders").select("*").order("created_at",{ascending:false}).limit(3000):sb.rpc("staff_orders")).then(function(r){
     if(r.error)return;
-    orders=r.data.map(mapO);ordersRender();notifyNew();cuRender();
+    orders=r.data.map(mapO);ordersRender();notifyNew();cuRender();loadRets();
   });
 }
 function setDiscount(id){
@@ -1001,7 +1012,53 @@ function setDiscount(id){
   });
 }
 
+/* ---------- مردود البيع ---------- */
+function loadRets(){
+  if(!sb||!(isAdmin||role=="accountant"))return Promise.resolve();
+  return sb.from("order_returns").select("*").order("created_at",{ascending:false}).limit(2000).then(function(r){
+    if(r.error)return;
+    rets=r.data.map(function(x){return {id:x.id,oid:x.order_id,code:x.code,name:x.name||"",phone:x.phone||"",items:x.items,total:Number(x.total),value:Number(x.value),cost:Number(x.cost||0),note:x.note||"",t:Date.parse(x.created_at)}});
+    if($("ordD").open)ordersRender();cuRender();accRender();
+  });
+}
+var retArm=null,retO=null;
+function retDone(o){var m={};rets.forEach(function(r){if(r.oid==o.id)r.items.forEach(function(x){m[x.i]=(m[x.i]||0)+Number(x.q)})});return m}
+function retHtml(o){
+  if(!isAdmin||(o.status!="confirmed"&&o.status!="delivered"))return "";
+  var l=rets.filter(function(r){return r.oid==o.id});
+  var h=l.map(function(r){return '<div class="ot disc"><span>مردود #'+r.id+' · '+(r.items||[]).map(function(x){return esc(x.n)+' ×'+x.q}).join("، ")+'</span><span>− '+fmt(r.value)+'</span></div><div class="row" style="margin-bottom:6px"><button class="btn ghost" data-rtp="'+r.id+'" style="flex:1">طباعة مردود بيع</button><button class="btn danger" data-rtd="'+r.id+'">'+(retArm==r.id?"اضغط للتأكيد":"إلغاء المردود")+'</button></div>'}).join("");
+  return h+'<button class="btn ghost" data-rt="'+o.id+'" style="width:100%;margin-top:8px">مردود مواد</button>';
+}
+function retOpen(id){
+  var o=orders.filter(function(x){return x.id==id})[0];if(!o)return;retO=o;
+  var dn=retDone(o);
+  $("retT").textContent="مردود بيع — فاتورة #"+o.code;
+  $("retL").innerHTML=(o.items||[]).map(function(it,i){
+    var rem=Number(it.q)-(dn[i]||0);
+    return '<div class="crow" style="align-items:center"><div style="flex:1"><b>'+esc(it.n)+'</b><div class="on">'+esc(BR[it.b]?BR[it.b].n:"")+' · '+fmt(it.p)+' · مباع '+it.q+(dn[i]?' · مردود سابقاً '+dn[i]:'')+'</div></div>'+
+      (rem>0?'<input type="number" min="0" max="'+rem+'" step="any" inputmode="decimal" id="rq-'+i+'" placeholder="0" aria-label="الكمية الراجعة" style="width:84px">':'<span class="on">كله راجع</span>')+'</div>';
+  }).join("");
+  $("retN").value="";$("retD").showModal();
+}
+$("retF").addEventListener("submit",function(e){
+  e.preventDefault();if(!retO)return;
+  var dn=retDone(retO),its=[];
+  (retO.items||[]).forEach(function(it,i){var el=$("rq-"+i);if(!el)return;var q=parseFloat(digits(el.value))||0;if(q<=0)return;var rem=Number(it.q)-(dn[i]||0);if(q>rem)q=rem;its.push({i:i,q:q})});
+  if(!its.length){toast("اكتب الكمية الراجعة لمادة وحدة على الأقل");return}
+  $("retOk").disabled=true;
+  sb.rpc("create_return",{p_order:String(retO.id),p_items:its,p_note:$("retN").value.trim()||null}).then(function(r){
+    $("retOk").disabled=false;
+    if(r.error){toast(/function|does not exist|schema cache/i.test(String(r.error.message||""))?"شغّل سكربت returns.sql بـ Supabase أولاً":"ما كدرنا نسجّل المردود. تأكد من الكميات.",5000);return}
+    $("retD").close();toast("تم تسجيل المردود: "+fmt(r.data.value),5000);loadRets();loadLedger();
+  });
+});
+function retPdf(id){
+  var r=rets.filter(function(x){return x.id==id})[0];if(!r)return;
+  makePdf(invoiceHtml({ret:true,code:"R"+r.id,orig:r.code,name:r.name,phone:r.phone,address:r.note,items:r.items,total:r.total,discount:r.total-r.value,status:"",t:r.t}),"Return-R"+r.id+".pdf");
+}
+
 /* ---------- الفاتورة PDF ---------- */
+
 function loadLib(src){return new Promise(function(res,rej){var el=document.createElement("script");el.src=src;el.onload=res;el.onerror=function(){el.remove();rej(new Error("load"))};document.head.appendChild(el)})}
 function libs(){
   var a=window.html2canvas?Promise.resolve():loadLib("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
@@ -1020,17 +1077,17 @@ function invoiceHtml(v){
   return '<div dir="rtl" style="width:794px;box-sizing:border-box;padding:44px 48px;background:#fff;color:#0F1A21;font-family:Tajawal,Tahoma,Arial,sans-serif;font-size:15px;line-height:1.6">'+
   '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:20px;border-bottom:4px solid #1F8E85">'+
     '<div style="display:flex;align-items:center;gap:14px">'+mark+'<div><div style="'+ch+'font-size:34px;line-height:1.1">ميركادو</div><div style="font-size:13px;color:#566771">مواد الإنشاء والعزل بمكان واحد</div></div></div>'+
-    '<div style="text-align:left"><div dir="ltr" style="'+ch+'font-size:34px;color:#1F8E85;letter-spacing:.04em;text-align:left">Invoice</div><div dir="ltr" style="font-size:18px;font-weight:700;text-align:left">#'+esc(v.code)+'</div></div>'+
+    '<div style="text-align:left"><div dir="ltr" style="'+ch+'font-size:34px;color:#1F8E85;letter-spacing:.04em;text-align:left">'+(v.ret?"Sales Return":"Invoice")+'</div><div dir="ltr" style="font-size:18px;font-weight:700;text-align:left">#'+esc(v.code)+'</div></div>'+
   '</div>'+
   '<div style="display:flex;gap:24px;margin:24px 0">'+
-    '<div style="flex:1;border:1px solid #dde4e3;border-radius:6px;padding:14px 16px"><div style="'+ch+'margin-bottom:6px;color:#1F8E85">بيانات الزبون</div>'+info("الاسم",v.name)+info("الهاتف",v.phone)+info("العنوان",v.address)+'</div>'+
-    '<div style="flex:1;border:1px solid #dde4e3;border-radius:6px;padding:14px 16px"><div style="'+ch+'margin-bottom:6px;color:#1F8E85">بيانات الفاتورة</div>'+info("رقم الفاتورة","#"+v.code)+info("التاريخ",dt)+info("حالة الطلب",MST[v.status]||"")+'</div>'+
+    '<div style="flex:1;border:1px solid #dde4e3;border-radius:6px;padding:14px 16px"><div style="'+ch+'margin-bottom:6px;color:#1F8E85">بيانات الزبون</div>'+info("الاسم",v.name)+info("الهاتف",v.phone)+(v.ret?"":info("العنوان",v.address))+'</div>'+
+    '<div style="flex:1;border:1px solid #dde4e3;border-radius:6px;padding:14px 16px"><div style="'+ch+'margin-bottom:6px;color:#1F8E85">بيانات الفاتورة</div>'+(v.ret?info("رقم المردود","#"+v.code)+info("الفاتورة الأصلية","#"+v.orig)+info("التاريخ",dt)+info("ملاحظة",v.address):info("رقم الفاتورة","#"+v.code)+info("التاريخ",dt)+info("حالة الطلب",MST[v.status]||""))+'</div>'+
   '</div>'+
   '<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="background:#0F1A21;color:#fff"><th style="padding:10px 12px;text-align:right;width:36px">#</th><th style="padding:10px 12px;text-align:right">المادة</th><th style="padding:10px 12px;text-align:center;width:70px">الكمية</th><th style="padding:10px 12px;text-align:left;width:130px">سعر الوحدة</th><th style="padding:10px 12px;text-align:left;width:140px">المجموع</th></tr></thead><tbody>'+rows+'</tbody></table>'+
   '<div style="display:flex;justify-content:flex-start;margin-top:18px"><div style="width:320px">'+
     '<div style="display:flex;justify-content:space-between;padding:6px 0"><span>الإجمالي</span><span dir="ltr">'+fmt(v.total)+'</span></div>'+
     (d>0?'<div style="display:flex;justify-content:space-between;padding:6px 0;color:#1F8E85"><span>الخصم</span><span dir="ltr">− '+fmt(d)+'</span></div>':'')+
-    '<div style="display:flex;justify-content:space-between;padding:12px 14px;margin-top:6px;background:#0F1A21;color:#fff;border-radius:6px;font-size:18px;font-weight:700"><span>المطلوب</span><span dir="ltr">'+fmt(net)+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:12px 14px;margin-top:6px;background:#0F1A21;color:#fff;border-radius:6px;font-size:18px;font-weight:700"><span>'+(v.ret?"قيمة المردود":"المطلوب")+'</span><span dir="ltr">'+fmt(net)+'</span></div>'+
   '</div></div>'+
   '<div style="margin-top:44px;padding-top:16px;border-top:1px solid #dde4e3;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#566771"><div>شكراً لتعاملكم معنا<br>للتواصل: <b dir="ltr" style="color:#0F1A21">07700081081</b></div><div dir="ltr" style="text-align:left">Powered by QAC Eng.Ali Zuhair Aziz<br>mirkado.net</div></div>'+
   '</div>';
@@ -1118,7 +1175,7 @@ function applyRole(rl){
   if(!isAdmin&&ordCh){try{sb.removeChannel(ordCh)}catch(e){}ordCh=null}
   if(ordTm){clearInterval(ordTm);ordTm=null}
   if(logged&&!isAdmin){loadOrders();ordTm=setInterval(function(){if(!document.hidden)loadOrders()},30000)}
-  if(!logged){orders=[];document.title=TITLE}
+  if(!logged){orders=[];rets=[];document.title=TITLE}
   if(!sales&&!isAdmin&&$("ordD")&&$("ordD").open)$("ordD").close();
   if(logged&&wasRole!==rl&&!isAdmin)toast(sales?"أهلاً بالمندوب — الطلبات من القائمة":"أهلاً بالمحاسب — الحسابات والزبائن من القائمة",5000);
   if(was!==isAdmin&&loaded){S.b<0?home():brand()}
@@ -1204,6 +1261,9 @@ document.addEventListener("click",function(e){
   else if(d.stt){var sx=staff.filter(function(x){return x.email==d.stt})[0];if(sx)sb.from("staff").update({active:!sx.active}).eq("email",d.stt).then(function(r){r.error?toast("ما كدرنا نغيّر"):loadStaff()})}
   else if(d.std){if(stArm!=d.std){stArm=d.std;stRender();return}sb.from("staff").delete().eq("email",d.std).then(function(r){stArm=null;r.error?toast("ما كدرنا نحذف"):(toast("تم الحذف"),loadStaff())})}
   else if(d.at){actTab=d.at;actRender()}
+  else if(d.rt){retOpen(d.rt)}
+  else if(d.rtp){retPdf(+d.rtp)}
+  else if(d.rtd){if(retArm!=+d.rtd){retArm=+d.rtd;ordersRender();return}var rid=+d.rtd;sb.rpc("delete_return",{p_id:rid}).then(function(r){retArm=null;r.error?toast("ما كدرنا نلغي المردود"):(toast("تم إلغاء المردود"),loadRets(),loadLedger())})}
   else if(d.ck){ctab=d.ck;cArm=null;consRender()}
   else if(d.cst){var cq=d.cst.split("|");sb.from("consultations").update({status:cq[1]}).eq("id",cq[0]).then(function(r){r.error?toast("ما كدرنا نحدّث الحالة"):loadCons()})}
   else if(d.cdel){if(cArm!=d.cdel){cArm=d.cdel;consRender();return}sb.from("consultations").delete().eq("id",d.cdel).then(function(r){cArm=null;r.error?toast("ما كدرنا نحذف"):(toast("تم الحذف"),loadCons())})}
