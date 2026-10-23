@@ -107,7 +107,7 @@ textarea{resize:vertical;min-height:84px}
 .step{flex:1;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--accent);border-radius:6px;overflow:hidden}
 .step button{background:transparent;border:0;width:40px;height:38px;font-size:20px;color:var(--accent)}
 .step b{min-width:28px;text-align:center}
-#ocnt,#ccnt{background:var(--tag);color:var(--tag-ink);border-radius:10px;padding:0 7px;margin-inline-start:6px;font-size:13px}
+#ocnt,#ccnt,#bkdot{background:var(--tag);color:var(--tag-ink);border-radius:10px;padding:0 7px;margin-inline-start:6px;font-size:13px}
 #ordD{width:min(640px,94vw)}
 .ord{border:1px solid var(--line);border-radius:4px;padding:12px;margin-bottom:10px}
 .oh{display:flex;justify-content:space-between;gap:8px;font-size:15px}
@@ -176,6 +176,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
     <button class="mi" id="consAdm" hidden>استشارات<b id="ccnt" hidden></b></button>
     <button class="mi" id="accBtn" hidden>الحسابات</button>
     <button class="mi" id="cuBtn" hidden>الزبائن</button>
+    <button class="mi" id="bkBtn" hidden>نسخة احتياطية<b id="bkdot" hidden>!</b></button>
     <button class="mi" id="addBtn" hidden>أضف منتج</button>
     <a class="mi" id="callBtn" href="tel:07700081081">اتصل بنا</a>
     <button class="mi" id="consBtn">احجز استشارة</button>
@@ -267,6 +268,12 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
     <label for="cun">ملاحظة (اختياري)</label><input id="cun" maxlength="500">
     <div class="row" style="margin-top:16px"><button class="btn" style="flex:1">احفظ</button><button type="button" class="btn ghost" data-close>إلغاء</button></div>
   </form>
+</dialog>
+
+<dialog id="bkD">
+  <h2>نسخة احتياطية</h2>
+  <p id="bkMsg" style="line-height:1.8;margin:0 0 12px"></p>
+  <div class="row"><button class="btn" id="bkGo" style="flex:1" disabled>احفظ الملف</button><button class="btn ghost" data-close>إغلاق</button></div>
 </dialog>
 
 <dialog id="entD">
@@ -598,6 +605,7 @@ $("cuEF").addEventListener("submit",function(e){
     $("cuE").close();toast(cuEditId?"تم حفظ التعديل":"تم التسجيل");loadCust();
   });
 });
+$("bkBtn").onclick=bkOpen;$("bkGo").onclick=bkSave;
 $("accBtn").onclick=function(){menuShow(false);accV=-1;accQ="";accK="all";accArm=null;$("accQ").value="";$("accD").showModal();accRender();loadLedger();loadCust()};
 $("pc").addEventListener("input",pcHint);$("p").addEventListener("input",pcHint);
 $("accQ").addEventListener("input",function(){accQ=$("accQ").value;accArm=null;accRender()});
@@ -773,6 +781,33 @@ var ledger=[],accOk=true,accV=-1,accQ="",accK="all",accEdit=null,accArm=null,acc
 var KL={buy:"شراء",pay:"دفعة",credit:"رصيد لي"};
 function custGross(){var s=0;orders.forEach(function(o){if(o.status=="confirmed"||o.status=="delivered")s+=Math.max(0,o.total-(o.discount||0))});return s}
 function custOwed(){var m=cuBuild(),s=0;Object.keys(m).forEach(function(k){if(m[k].bal>0)s+=m[k].bal});return s}
+function bkCheck(){
+  var last=Number(lsGet("mm-bk",0))||0;
+  bkOver=isAdmin&&(Date.now()-last>7*864e5);
+  $("bkdot").hidden=!bkOver;updDot();
+}
+var bkFile=null;
+function bkDate(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function bkOpen(){
+  menuShow(false);
+  var last=Number(lsGet("mm-bk",0))||0;
+  $("bkMsg").textContent="جاري تجهيز النسخة…";$("bkGo").disabled=true;bkFile=null;$("bkD").showModal();
+  var T=["products","product_costs","categories","orders","consultations","ledger","cust_ledger"];
+  Promise.all(T.map(function(t){return sb.from(t).select("*").limit(50000).then(function(r){return {t:t,rows:r.error?null:r.data,err:r.error?String(r.error.message||""):""}},function(){return {t:t,rows:null,err:"failed"}})})).then(function(res){
+    var out={app:"mirkado",created:new Date().toISOString(),tables:{}},n=0,miss=[];
+    res.forEach(function(x){if(x.rows){out.tables[x.t]=x.rows;n+=x.rows.length}else miss.push(x.t)});
+    bkFile=new File([JSON.stringify(out)],"mirkado-backup-"+bkDate()+".json",{type:"application/json"});
+    $("bkMsg").textContent="النسخة جاهزة: "+n+" سجل من "+Object.keys(out.tables).length+" جداول."+(miss.length?" (ما انسحبت: "+miss.join("، ")+" — غالباً سكربتها ما اشتغل بعد)":"")+" اضغط الزر واحفظ الملف بتطبيق الملفات أو iCloud."+(last?" آخر نسخة: "+dmy(last)+".":"");
+    $("bkGo").disabled=false;
+  });
+}
+function bkSave(){
+  if(!bkFile)return;
+  var f=bkFile;
+  function done(){lsSet("mm-bk",Date.now());bkCheck();toast("تم حفظ النسخة")}
+  if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:f.name}).then(done,function(){})}
+  else{var a=document.createElement("a");a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(a.href)},2000);done()}
+}
 function monthStart(){var d=new Date();return new Date(d.getFullYear(),d.getMonth(),1).getTime()}
 function profitSince(t0){var s=0;orders.forEach(function(o){if((o.status=="confirmed"||o.status=="delivered")&&o.cost!=null&&o.t>=t0)s+=o.total-(o.discount||0)-o.cost});return s}
 function accBal(b){var r={buy:0,pay:0,credit:0};ledger.forEach(function(e){if(b<0||e.brand==b)r[e.kind]+=e.amount});r.bal=r.buy-r.pay-r.credit;return r}
@@ -827,7 +862,8 @@ function accOpenEntry(kind,e){
   $("entD").showModal();
 }
 var ordNew=0,consNew=0,cons=[],ctab="new",consCh=null,cArm=null;
-function updDot(){$("mdot").hidden=!(ordNew||consNew)}
+var bkOver=false;
+function updDot(){$("mdot").hidden=!(ordNew||consNew||bkOver)}
 function consRender(){
   var n={new:0,done:0};cons.forEach(function(c){if(n[c.status]!==undefined)n[c.status]++});
   consNew=n.new;$("ccnt").textContent=n.new;$("ccnt").hidden=!n.new;updDot();
@@ -996,7 +1032,7 @@ $("ordBtn").onclick=function(){
 };
 function setAdmin(session){
   var was=isAdmin;isAdmin=!!session;
-  $("addBtn").hidden=!isAdmin;$("ordBtn").hidden=!isAdmin;$("consAdm").hidden=!isAdmin;$("accBtn").hidden=!isAdmin;$("cuBtn").hidden=!isAdmin;if(isAdmin)loadCosts();else costs={};
+  $("addBtn").hidden=!isAdmin;$("ordBtn").hidden=!isAdmin;$("consAdm").hidden=!isAdmin;$("accBtn").hidden=!isAdmin;$("cuBtn").hidden=!isAdmin;$("bkBtn").hidden=!isAdmin;bkCheck();if(isAdmin)loadCosts();else costs={};
   if(!isAdmin){custL=[];if($("cuD").open)$("cuD").close();ledger=[];if($("accD").open)$("accD").close()}
   if(isAdmin&&!consCh){
     loadCons();
