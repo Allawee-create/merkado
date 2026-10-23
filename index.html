@@ -810,19 +810,19 @@ function makePdf(html,fname){
   document.getElementById("pdfX").onclick=close;
   function fallback(er){
     if(dead)return;try{console.warn('pdf fail',er&&er.message)}catch(x){}
-    document.getElementById("pdfMsg").textContent="ما كدرنا نسوي الملف تلقائياً. تكدر تحفظه من الطباعة: اضغط الزر، وبعدها اختار مشاركة ثم حفظ في الملفات.";
+    document.getElementById("pdfMsg").textContent="[خطأ: "+stage+" / "+String(er&&er.message||er).slice(0,80)+"] ما كدرنا نسوي الملف تلقائياً. تكدر تحفظه من الطباعة: اضغط الزر، وبعدها اختار مشاركة ثم حفظ في الملفات.";
     document.getElementById("pdfBtns").innerHTML='<button class="btn" id="pdfP">طباعة / حفظ PDF</button><button class="btn ghost" id="pdfC">إغلاق</button>';
     document.getElementById("pdfC").onclick=close;
     document.getElementById("pdfP").onclick=function(){try{window.print()}catch(e){toast("الطباعة غير مدعومة بهذا المتصفح")}};
   }
   var fontsReady=document.fonts&&document.fonts.ready?withTimeout(document.fonts.ready,2500).catch(function(){}):Promise.resolve();
-  var tries=0;
-  function attempt(){return withTimeout(libs(),20000).then(function(){return fontsReady}).then(function(){
+  var tries=0,stage="libs";
+  function attempt(){stage="libs";return withTimeout(libs(),20000).then(function(){return fontsReady}).then(function(){stage="canvas";
     if(dead)throw new Error("cancelled");
     return withTimeout(window.html2canvas(host.firstChild,{scale:2,backgroundColor:"#ffffff",useCORS:true,scrollX:0,scrollY:0,logging:false,imageTimeout:4000}),25000)
   }).then(function(cv){
     if(dead)return;
-    var J=window.jspdf.jsPDF,pdf=new J({unit:"pt",format:"a4",orientation:"portrait"});
+    stage="pdf";var J=window.jspdf.jsPDF,pdf=new J({unit:"pt",format:"a4",orientation:"portrait"});
     var pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
     var ih=cv.height*pw/cv.width,pages=Math.max(1,Math.ceil(ih/ph-0.001)),sliceH=Math.floor(cv.width*ph/pw);
     for(var p=0;p<pages;p++){
