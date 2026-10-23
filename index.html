@@ -812,8 +812,12 @@ function bkOpen(){
 function bkSave(){
   if(!bkFile)return;
   var f=bkFile;
+  var prev=Number(lsGet("mm-bk",0))||0;
   function done(){lsSet("mm-bk",Date.now());bkCheck();toast("تم حفظ النسخة")}
-  if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:f.name}).then(done,function(){})}
+  if(navigator.canShare&&navigator.canShare({files:[f]})){
+    done();
+    navigator.share({files:[f],title:f.name}).catch(function(e){if(e&&e.name=="AbortError"){lsSet("mm-bk",prev);bkCheck()}})
+  }
   else{var a=document.createElement("a");a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(a.href)},2000);done()}
 }
 function monthStart(){var d=new Date();return new Date(d.getFullYear(),d.getMonth(),1).getTime()}
