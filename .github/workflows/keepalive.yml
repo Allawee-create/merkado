@@ -1,0 +1,18 @@
+name: Keep Supabase awake
+on:
+  schedule:
+    - cron: "17 5 */3 * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query the database
+        run: |
+          code=$(curl -s -o /tmp/out.json -w "%{http_code}" \
+            "https://epajpzmncscheoyljzyc.supabase.co/rest/v1/products?select=id&limit=1" \
+            -H "apikey: sb_publishable_jk8dC0HN2CsxLh2c0Kp-xg_JLxk5Wfg")
+          echo "HTTP $code"
+          cat /tmp/out.json
+          test "$code" = "200"
