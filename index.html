@@ -810,11 +810,12 @@ function makePdf(html,fname){
   document.getElementById("pdfX").onclick=close;
   function fallback(er){
     if(dead)return;try{console.warn('pdf fail',er&&er.message)}catch(x){}
-    document.getElementById("pdfMsg").textContent="[خطأ: "+stage+" / "+String(er&&er.message||er).slice(0,80)+"] ما كدرنا نسوي الملف تلقائياً. تكدر تحفظه من الطباعة: اضغط الزر، وبعدها اختار مشاركة ثم حفظ في الملفات.";
+    document.getElementById("pdfMsg").textContent=er=="ios"?"الملف جاهز. اضغط «طباعة / حفظ PDF»، وبعدها اضغط أيقونة المشاركة أعلى اليمين ثم «حفظ في الملفات».":"ما كدرنا نسوي الملف تلقائياً. اضغط «طباعة / حفظ PDF»، وبعدها أيقونة المشاركة ثم «حفظ في الملفات».";
     document.getElementById("pdfBtns").innerHTML='<button class="btn" id="pdfP">طباعة / حفظ PDF</button><button class="btn ghost" id="pdfC">إغلاق</button>';
     document.getElementById("pdfC").onclick=close;
     document.getElementById("pdfP").onclick=function(){try{window.print()}catch(e){toast("الطباعة غير مدعومة بهذا المتصفح")}};
   }
+  if(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform=="MacIntel"&&navigator.maxTouchPoints>1)){fallback("ios");return}
   var fontsReady=document.fonts&&document.fonts.ready?withTimeout(document.fonts.ready,2500).catch(function(){}):Promise.resolve();
   var tries=0,stage="libs";
   function attempt(){stage="libs";return withTimeout(libs(),20000).then(function(){return fontsReady}).then(function(){stage="canvas";
