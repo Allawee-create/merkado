@@ -819,7 +819,10 @@ function makePdf(html,fname){
   var tries=0,stage="libs";
   function attempt(){stage="libs";return withTimeout(libs(),20000).then(function(){return fontsReady}).then(function(){stage="canvas";
     if(dead)throw new Error("cancelled");
-    return withTimeout(window.html2canvas(host.firstChild,{scale:2,backgroundColor:"#ffffff",useCORS:true,scrollX:0,scrollY:0,logging:false,imageTimeout:4000}),25000)
+    /* html2canvas ينسخ الصفحة بإطار جديد ويستنى تحميل كل الستايلات الخارجية (خطوط گوگل) — إذا تعلّقت يعلّق كل شي. نشيلها مؤقتاً */
+    var ext=[].slice.call(document.querySelectorAll('link[rel="stylesheet"]')).filter(function(l){return /^https?:/.test(l.href)&&l.href.indexOf(location.origin)!==0}).map(function(l){var m={l:l,p:l.parentNode,n:l.nextSibling};l.remove();return m});
+    function back(){ext.forEach(function(m){try{m.p.insertBefore(m.l,m.n)}catch(e){}});ext=[]}
+    return withTimeout(window.html2canvas(host.firstChild,{scale:2,backgroundColor:"#ffffff",useCORS:true,scrollX:0,scrollY:0,logging:false,imageTimeout:4000,foreignObjectRendering:false}),30000).then(function(c){back();return c},function(e){back();throw e})
   }).then(function(cv){
     if(dead)return;
     stage="pdf";var J=window.jspdf.jsPDF,pdf=new J({unit:"pt",format:"a4",orientation:"portrait"});
