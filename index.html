@@ -258,7 +258,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
 <dialog id="retD">
   <h2 id="retT">مردود بيع</h2>
   <div class="on" style="margin-bottom:8px">حدد كمية كل مادة راجعة. تنزل من حساب الزبون وترجع لحساب البراند تلقائياً.</div>
-  <form id="retF">
+  <form id="retF" novalidate>
     <div id="retL"></div>
     <label for="retN">ملاحظة (اختياري)</label><input id="retN" maxlength="300" autocomplete="off">
     <div class="row" style="margin-top:14px"><button class="btn" style="flex:1" id="retOk">تسجيل المردود</button><button type="button" class="btn ghost" data-close>إلغاء</button></div>
@@ -808,15 +808,16 @@ function makePdf(html,fname){
   function close(){dead=true;host.remove();try{cover.close()}catch(e){}cover.remove()}
   cover.addEventListener("cancel",function(e){e.preventDefault();close()});
   document.getElementById("pdfX").onclick=close;
-  function fallback(){
-    if(dead)return;
+  function fallback(er){
+    if(dead)return;try{console.warn('pdf fail',er&&er.message)}catch(x){}
     document.getElementById("pdfMsg").textContent="ما كدرنا نسوي الملف تلقائياً. تكدر تحفظه من الطباعة: اضغط الزر، وبعدها اختار مشاركة ثم حفظ في الملفات.";
     document.getElementById("pdfBtns").innerHTML='<button class="btn" id="pdfP">طباعة / حفظ PDF</button><button class="btn ghost" id="pdfC">إغلاق</button>';
     document.getElementById("pdfC").onclick=close;
     document.getElementById("pdfP").onclick=function(){try{window.print()}catch(e){toast("الطباعة غير مدعومة بهذا المتصفح")}};
   }
   var fontsReady=document.fonts&&document.fonts.ready?withTimeout(document.fonts.ready,2500).catch(function(){}):Promise.resolve();
-  withTimeout(libs(),20000).then(function(){return fontsReady}).then(function(){
+  var tries=0;
+  function attempt(){return withTimeout(libs(),20000).then(function(){return fontsReady}).then(function(){
     if(dead)throw new Error("cancelled");
     return withTimeout(window.html2canvas(host.firstChild,{scale:2,backgroundColor:"#ffffff",useCORS:true,scrollX:0,scrollY:0,logging:false,imageTimeout:4000}),25000)
   }).then(function(cv){
@@ -831,7 +832,8 @@ function makePdf(html,fname){
       pdf.addImage(part.toDataURL("image/jpeg",.92),"JPEG",0,0,pw,part.height*pw/cv.width);
     }
     pdf.save(fname);close();toast("تم تجهيز الملف");
-  }).catch(function(){fallback()});
+  })}
+  attempt().catch(function(e){if(dead)return;if(tries++<1){document.getElementById("pdfMsg").textContent="جاري المحاولة مرة ثانية…";return attempt()}throw e}).catch(function(e){fallback(e)});
 }
 function cuPdf(){
   var c=cuBuild()[cuK];if(!c)return;
@@ -1032,23 +1034,25 @@ function retHtml(o){
 function retOpen(id){
   var o=orders.filter(function(x){return x.id==id})[0];if(!o)return;retO=o;
   var dn=retDone(o);
+  if(!(o.items||[]).some(function(it,i){return Number(it.q)-(dn[i]||0)>0})){toast("كل مواد هذه الفاتورة تم مردودها بالفعل",5000);return}
   $("retT").textContent="مردود بيع — فاتورة #"+o.code;
   $("retL").innerHTML=(o.items||[]).map(function(it,i){
     var rem=Number(it.q)-(dn[i]||0);
     return '<div class="crow" style="align-items:center"><div style="flex:1"><b>'+esc(it.n)+'</b><div class="on">'+esc(BR[it.b]?BR[it.b].n:"")+' · '+fmt(it.p)+' · مباع '+it.q+(dn[i]?' · مردود سابقاً '+dn[i]:'')+'</div></div>'+
-      (rem>0?'<input type="number" min="0" max="'+rem+'" step="any" inputmode="decimal" id="rq-'+i+'" placeholder="0" aria-label="الكمية الراجعة" style="width:84px">':'<span class="on">كله راجع</span>')+'</div>';
+      (rem>0?'<input type="number" inputmode="decimal" id="rq-'+i+'" placeholder="0" aria-label="الكمية الراجعة" style="width:84px">':'<span class="on" style="color:var(--bad,#b3261e);font-weight:700">تم مردودها بالفعل</span>')+'</div>';
   }).join("");
   $("retN").value="";$("retD").showModal();
 }
 $("retF").addEventListener("submit",function(e){
   e.preventDefault();if(!retO)return;
-  var dn=retDone(retO),its=[];
-  (retO.items||[]).forEach(function(it,i){var el=$("rq-"+i);if(!el)return;var q=parseFloat(digits(el.value))||0;if(q<=0)return;var rem=Number(it.q)-(dn[i]||0);if(q>rem)q=rem;its.push({i:i,q:q})});
+  var dn=retDone(retO),its=[],bad="";
+  (retO.items||[]).forEach(function(it,i){var el=$("rq-"+i);if(!el)return;var q=parseFloat(digits(el.value))||0;if(q<=0)return;var rem=Number(it.q)-(dn[i]||0);if(q>rem){bad=it.n+" — تم مردود "+(dn[i]||0)+" بالفعل، المتبقي "+rem;return}its.push({i:i,q:q})});
+  if(bad){toast(bad,6000);return}
   if(!its.length){toast("اكتب الكمية الراجعة لمادة وحدة على الأقل");return}
   $("retOk").disabled=true;
   sb.rpc("create_return",{p_order:String(retO.id),p_items:its,p_note:$("retN").value.trim()||null}).then(function(r){
     $("retOk").disabled=false;
-    if(r.error){toast(/function|does not exist|schema cache/i.test(String(r.error.message||""))?"شغّل سكربت returns.sql بـ Supabase أولاً":"ما كدرنا نسجّل المردود. تأكد من الكميات.",5000);return}
+    if(r.error){toast(/function|does not exist|schema cache/i.test(String(r.error.message||""))?"شغّل سكربت returns.sql بـ Supabase أولاً":/exceeds/.test(String(r.error.message||""))?"هذه المادة تم مردودها بالفعل":"ما كدرنا نسجّل المردود. جرّب مرة ثانية.",5000);return}
     $("retD").close();toast("تم تسجيل المردود: "+fmt(r.data.value),5000);loadRets();loadLedger();
   });
 });
