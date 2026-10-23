@@ -815,7 +815,7 @@ function makePdf(html,fname){
     document.getElementById("pdfC").onclick=close;
     document.getElementById("pdfP").onclick=function(){try{window.print()}catch(e){toast("الطباعة غير مدعومة بهذا المتصفح")}};
   }
-  if(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform=="MacIntel"&&navigator.maxTouchPoints>1)){fallback("ios");return}
+  if(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform=="MacIntel"&&navigator.maxTouchPoints>1)){fallback("ios");setTimeout(function(){if(!dead){try{window.print()}catch(e){}}},200);return}
   var fontsReady=document.fonts&&document.fonts.ready?withTimeout(document.fonts.ready,2500).catch(function(){}):Promise.resolve();
   var tries=0,stage="libs";
   function attempt(){stage="libs";return withTimeout(libs(),20000).then(function(){return fontsReady}).then(function(){stage="canvas";
