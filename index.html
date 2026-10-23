@@ -991,14 +991,14 @@ function ordersRender(){
   $("ocnt").textContent=cnt.new;$("ocnt").hidden=!cnt.new;ordNew=cnt.new;updDot();
   $("otabs").innerHTML=Object.keys(ST).map(function(k){return '<button class="chip" aria-pressed="'+(otab==k)+'" data-ot="'+k+'">'+ST[k]+' ('+cnt[k]+')</button>'}).join("");
   var list=orders.filter(function(o){return o.status==otab});
-  function ab(st,label,cls){return '<button class="'+(cls||"btn ghost")+'" data-os="'+'ID|'+st+'">'+label+'</button>'}
+  function ab(st,label,cls){return '<button class="'+(cls||"btn ghost")+'" data-os="'+'ID|'+st+'" style="flex:1">'+label+'</button>'}
   $("olist").innerHTML=list.length?list.map(function(o){
     var d=new Date(o.t).toLocaleString("en-GB",{dateStyle:"short",timeStyle:"short"});
     var act=o.status=="new"?ab("confirmed","أكّد وابدأ التجهيز","btn")+ab("cancelled","إلغاء"):
             o.status=="confirmed"?ab("delivered","تم التسليم","btn")+ab("cancelled","إلغاء"):
             o.status=="delivered"?ab("confirmed","رجّعه لقيد التجهيز"):ab("new","رجّعه لجديد");
     act=act.split("ID|").join(o.id+"|");
-    return '<div class="ord"><div class="oh"><b>'+esc(o.name)+'</b><span>فاتورة #'+esc(o.code)+' · '+d+'</span></div><div><a href="tel:'+esc(String(o.phone).replace(/[^0-9+]/g,""))+'">'+esc(o.phone)+'</a></div>'+itemsHtml(o.items)+(o.note?'<div class="on">'+esc(o.note)+'</div>':'')+totHtml(o)+(o.cost!=null?'<div class="ot"><span>الربح التقريبي</span><span class="'+(o.total-o.discount-o.cost<0?'neg':'pos')+'">'+fmt(o.total-o.discount-o.cost)+'</span></div>':'')+((isAdmin&&(o.status=="new"||o.status=="confirmed"))?'<div class="dsc"><span>خصم</span><input type="number" min="0" step="any" inputmode="decimal" id="dv-'+o.id+'" placeholder="0" aria-label="قيمة الخصم"'+(o.discount>0?' value="'+o.discount+'"':'')+'><select id="dt-'+o.id+'" aria-label="نوع الخصم"><option value="a">د.ع</option><option value="p">%</option></select><button class="btn ghost" data-od="'+o.id+'">طبّق</button></div>':'')+retHtml(o)+'<div class="row">'+act+'</div><button class="btn ghost" data-invo="'+o.id+'" style="width:100%;margin-top:8px">فاتورة PDF</button></div>'
+    return '<div class="ord"><div class="oh"><b>'+esc(o.name)+'</b><span>فاتورة #'+esc(o.code)+' · '+d+'</span></div><div><a href="tel:'+esc(String(o.phone).replace(/[^0-9+]/g,""))+'">'+esc(o.phone)+'</a></div>'+itemsHtml(o.items)+(o.note?'<div class="on">'+esc(o.note)+'</div>':'')+totHtml(o)+(o.cost!=null?'<div class="ot"><span>الربح التقريبي</span><span class="'+(o.total-o.discount-o.cost<0?'neg':'pos')+'">'+fmt(o.total-o.discount-o.cost)+'</span></div>':'')+((isAdmin&&(o.status=="new"||o.status=="confirmed"))?'<div class="dsc"><span>خصم</span><input type="number" min="0" step="any" inputmode="decimal" id="dv-'+o.id+'" placeholder="0" aria-label="قيمة الخصم"'+(o.discount>0?' value="'+o.discount+'"':'')+'><select id="dt-'+o.id+'" aria-label="نوع الخصم"><option value="a">د.ع</option><option value="p">%</option></select><button class="btn ghost" data-od="'+o.id+'">طبّق</button></div>':'')+retHtml(o)+'<div class="row" style="margin-top:10px">'+act+'</div><div class="row" style="margin-top:8px">'+retBtn(o)+'<button class="btn ghost" data-invo="'+o.id+'" style="flex:1">فاتورة PDF</button></div></div>'
   }).join(""):'<div class="empty">ما أكو طلبات '+ST[otab]+'.</div>';
 }
 function loadOrders(){
@@ -1033,8 +1033,9 @@ function retHtml(o){
   if(!isAdmin||(o.status!="confirmed"&&o.status!="delivered"))return "";
   var l=rets.filter(function(r){return r.oid==o.id});
   var h=l.map(function(r){return '<div class="ot disc"><span>مردود #'+r.id+' · '+(r.items||[]).map(function(x){return esc(x.n)+' ×'+x.q}).join("، ")+'</span><span>− '+fmt(r.value)+'</span></div><div class="row" style="margin-bottom:6px"><button class="btn ghost" data-rtp="'+r.id+'" style="flex:1">طباعة مردود بيع</button><button class="btn danger" data-rtd="'+r.id+'">'+(retArm==r.id?"اضغط للتأكيد":"إلغاء المردود")+'</button></div>'}).join("");
-  return h+'<button class="btn ghost" data-rt="'+o.id+'" style="width:100%;margin-top:8px">مردود مواد</button>';
+  return h;
 }
+function retBtn(o){return (isAdmin&&(o.status=="confirmed"||o.status=="delivered"))?'<button class="btn ghost" data-rt="'+o.id+'" style="flex:1">مردود مواد</button>':''}
 function retOpen(id){
   var o=orders.filter(function(x){return x.id==id})[0];if(!o)return;retO=o;
   var dn=retDone(o);
