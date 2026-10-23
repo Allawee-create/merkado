@@ -127,6 +127,7 @@ textarea{resize:vertical;min-height:84px}
 dialog{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:min(440px,92vw);padding:18px;max-height:88vh}
 #consD,#accD,#cuD{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border:0;border-radius:0;overflow:auto;padding:max(18px,env(safe-area-inset-top)) 18px 24px}
 textarea#cnt{min-height:96px}
+.hpf{position:absolute;left:-9999px;top:auto;width:1px;height:1px;opacity:0;pointer-events:none}
 .acc-top{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
 .acc-box{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--surface)}
 .acc-box small{display:block;color:var(--muted)}
@@ -197,6 +198,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
 <dialog id="chkD">
   <h2>معلومات الطلب</h2>
   <form id="cf">
+    <input class="hpf" tabindex="-1" autocomplete="off" aria-hidden="true">
     <label for="cn">الاسم</label><input id="cn" autocomplete="name" maxlength="80" required>
     <label for="cp">رقم الهاتف</label><input id="cp" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required>
     <label for="cnote">العنوان أو ملاحظات التوصيل</label><input id="cnote" maxlength="300" required>
@@ -215,6 +217,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
   <h2>احجز استشارة</h2>
   <p style="margin:0 0 12px;color:var(--muted);line-height:1.8">عبّي البيانات وراح نتواصل وياك لتحديد موعد الاستشارة.</p>
   <form id="consF">
+    <input class="hpf" tabindex="-1" autocomplete="off" aria-hidden="true">
     <label for="kn">اسمك</label><input id="kn" maxlength="120" required>
     <label for="kp">رقم هاتفك</label><input id="kp" type="tel" inputmode="tel" maxlength="30" required>
     <label for="kj">اسم المشروع</label><input id="kj" maxlength="160" required>
@@ -526,6 +529,7 @@ $("buy").onclick=function(){
 };
 $("cf").addEventListener("submit",function(e){
   e.preventDefault();
+  if($("cf").querySelector(".hpf").value){toast("تم");return}
   var nm=$("cn").value.trim(),ph=digits($("cp").value.trim()),ad=$("cnote").value.trim();
   var items=[];
   all().forEach(function(p){var q=cart[p.id];if(q)items.push({id:p.id,q:q})});
@@ -533,7 +537,7 @@ $("cf").addEventListener("submit",function(e){
   $("csend").disabled=true;
   sb.rpc("create_order",{p_name:nm,p_phone:ph,p_address:ad,p_items:items}).then(function(r){
     $("csend").disabled=false;
-    if(r.error||!r.data){toast("ما كدرنا نرسل الطلب. جرّب مرة ثانية.");return}
+    if(r.error||!r.data){toast(r.error&&/rate_limited/.test(String(r.error.message||""))?"عدد الطلبات من رقمك كثير خلال وقت قصير. جرّب بعد شوي أو اتصل بنا.":"ما كدرنا نرسل الطلب. جرّب مرة ثانية.",5000);return}
     var o=r.data;
     CUST={n:nm,p:ph,a:ad};lsSet("mm-cust",CUST);
     MY.push({code:o.code,phone:ph,n:nm,a:ad});lsSet("mm-my",MY.slice(-30));lastDone={o:o,n:nm,a:ad,ph:ph};
@@ -583,11 +587,15 @@ $("consBtn").onclick=function(){
 $("consAdm").onclick=function(){menuShow(false);cArm=null;consRender();$("admCD").showModal()};
 $("consF").addEventListener("submit",function(e){
   e.preventDefault();if(!sb){toast("الموقع غير مربوط بقاعدة البيانات");return}
+  if($("consF").querySelector(".hpf").value){$("consD").close();toast("وصلنا طلبك");return}
   var d={name:$("kn").value.trim(),phone:digits($("kp").value.trim()),project:$("kj").value.trim(),address:$("ka").value.trim(),service:$("ks").value,notes:$("kt").value.trim()||null};
   $("ksend").disabled=true;
-  sb.from("consultations").insert(d).then(function(r){
+  sb.rpc("create_consult",{p_name:d.name,p_phone:d.phone,p_project:d.project,p_address:d.address,p_service:d.service,p_notes:d.notes||""}).then(function(r){
+    if(r.error&&/create_consult|schema cache|could not find/i.test(String(r.error.message||"")))return sb.from("consultations").insert(d);
+    return r;
+  }).then(function(r){
     $("ksend").disabled=false;
-    if(r.error){toast(/relation|does not exist|schema cache/i.test(String(r.error.message||""))?"خدمة الاستشارات غير مفعّلة بعد":"ما كدرنا نرسل الطلب. جرّب مرة ثانية.",5000);return}
+    if(r.error){var m=String(r.error.message||"");toast(/rate_limited/.test(m)?"أرسلت طلبات كثيرة. جرّب بعد شوي أو اتصل بنا.":/relation|does not exist/i.test(m)?"خدمة الاستشارات غير مفعّلة بعد":"ما كدرنا نرسل الطلب. جرّب مرة ثانية.",5000);return}
     $("consD").close();toast("وصلنا طلبك وراح نتواصل وياك قريباً",6000);
   });
 });
