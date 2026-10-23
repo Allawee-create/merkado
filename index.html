@@ -127,7 +127,7 @@ textarea{resize:vertical;min-height:84px}
 dialog{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:min(440px,92vw);padding:18px;max-height:88vh}
 #consD,#accD,#cuD{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border:0;border-radius:0;overflow:auto;padding:max(18px,env(safe-area-inset-top)) 18px 24px}
 textarea#cnt{min-height:96px}
-.hpf{position:absolute;left:-9999px;top:auto;width:1px;height:1px;opacity:0;pointer-events:none}
+.hpf{position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
 .acc-top{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
 .acc-box{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--surface)}
 .acc-box small{display:block;color:var(--muted)}
@@ -198,7 +198,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
 <dialog id="chkD">
   <h2>معلومات الطلب</h2>
   <form id="cf">
-    <input class="hpf" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <input class="hpf" tabindex="-1" autocomplete="off" aria-hidden="true" inert>
     <label for="cn">الاسم</label><input id="cn" autocomplete="name" maxlength="80" required>
     <label for="cp">رقم الهاتف</label><input id="cp" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required>
     <label for="cnote">العنوان أو ملاحظات التوصيل</label><input id="cnote" maxlength="300" required>
@@ -217,7 +217,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
   <h2>احجز استشارة</h2>
   <p style="margin:0 0 12px;color:var(--muted);line-height:1.8">عبّي البيانات وراح نتواصل وياك لتحديد موعد الاستشارة.</p>
   <form id="consF">
-    <input class="hpf" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <input class="hpf" tabindex="-1" autocomplete="off" aria-hidden="true" inert>
     <label for="kn">اسمك</label><input id="kn" maxlength="120" required>
     <label for="kp">رقم هاتفك</label><input id="kp" type="tel" inputmode="tel" maxlength="30" required>
     <label for="kj">اسم المشروع</label><input id="kj" maxlength="160" required>
