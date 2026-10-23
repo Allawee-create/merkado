@@ -127,6 +127,8 @@ textarea{resize:vertical;min-height:84px}
 dialog{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:min(440px,92vw);padding:18px;max-height:88vh}
 #consD,#accD,#cuD{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border:0;border-radius:0;overflow:auto;padding:max(18px,env(safe-area-inset-top)) 18px 24px}
 textarea#cnt{min-height:96px}
+#pdfDlg{border:0;border-radius:0;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:20px;background:var(--bg);color:var(--ink);text-align:center;font-weight:700;font-size:18px}
+#pdfDlg[open]{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
 @media print{body>*{display:none!important}body>#prtHost{display:block!important;position:static!important;z-index:auto!important}}
 @page{size:A4;margin:0}
 .hpf{position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
@@ -756,10 +758,11 @@ function withTimeout(p,ms){return new Promise(function(res,rej){var t=setTimeout
 function makePdf(html,fname){
   var dead=false;
   var host=document.createElement("div");host.id="prtHost";host.style.cssText="position:fixed;left:0;top:0;z-index:9998;background:#fff";host.innerHTML=html;document.body.appendChild(host);
-  var cover=document.createElement("div");cover.style.cssText="position:fixed;inset:0;z-index:9999;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-weight:700;font-size:18px;padding:20px;text-align:center";
+  var cover=document.createElement("dialog");cover.id="pdfDlg";
   cover.innerHTML='<div id="pdfMsg">جاري تجهيز الملف…</div><div class="row" id="pdfBtns"><button class="btn ghost" id="pdfX">إلغاء</button></div>';
-  document.body.appendChild(cover);
-  function close(){dead=true;host.remove();cover.remove()}
+  document.body.appendChild(cover);cover.showModal();
+  function close(){dead=true;host.remove();try{cover.close()}catch(e){}cover.remove()}
+  cover.addEventListener("cancel",function(e){e.preventDefault();close()});
   document.getElementById("pdfX").onclick=close;
   function fallback(){
     if(dead)return;
