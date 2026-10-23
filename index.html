@@ -183,6 +183,8 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
     <button class="mi" id="accBtn" hidden>الحسابات</button>
     <button class="mi" id="cuBtn" hidden>الزبائن</button>
     <button class="mi" id="visBtn" hidden>الزوار</button>
+    <button class="mi" id="stBtn" hidden>الموظفين</button>
+    <button class="mi" id="actBtn" hidden>سجل النشاط</button>
     <button class="mi" id="bkBtn" hidden>نسخة احتياطية<b id="bkdot" hidden>!</b></button>
     <button class="mi" id="addBtn" hidden>أضف منتج</button>
     <a class="mi" id="callBtn" href="tel:07700081081">اتصل بنا</a>
@@ -192,7 +194,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
 </header>
 <main id="main"></main>
 <a id="waFab" href="https://wa.me/9647700081081?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D8%B3%D8%AA%D9%81%D8%B3%D8%A7%D8%B1%20%D8%B9%D9%86%20%D9%85%D9%8A%D8%B1%D9%83%D8%A7%D8%AF%D9%88" target="_blank" rel="noopener" aria-label="واتساب"><svg viewBox="0 0 32 32" width="30" height="30"><path fill="#fff" d="M16 3C9 3 3.3 8.6 3.3 15.5c0 2.3.6 4.4 1.8 6.3L3 29l7.4-1.9a12.800 12.800 0 0 0 5.600 1.300c7 0 12.700-5.600 12.700-12.500S23 3 16 3Zm0 23.200c-1.800 0-3.600-.5-5.100-1.400l-.4-.2-4.400 1.100 1.200-4.200-.3-.4a10 10 0 0 1-1.600-5.500C5.400 10 10.200 5.400 16 5.400S26.600 10 26.600 15.600 21.800 26.200 16 26.200Zm5.800-7.800c-.3-.2-1.900-.9-2.200-1s-.5-.2-.7.200-.8 1-1 1.200-.4.200-.7.100a8.500 8.500 0 0 1-4.200-3.700c-.3-.6.300-.5.900-1.700.1-.2 0-.4 0-.5l-1-2.300c-.2-.6-.5-.5-.7-.5h-.6a1.200 1.200 0 0 0-.9.400 3.700 3.700 0 0 0-1.100 2.700c0 1.600 1.200 3.200 1.300 3.400s2.300 3.600 5.600 4.900c2.100.8 2.900.9 3.900.7.600-.1 1.900-.8 2.200-1.500s.3-1.400.2-1.500-.3-.2-.6-.4Z"/></svg></a>
-<div class="foot"><p class="pw" dir="ltr">Powered by QAC Eng.Ali Zuhair Aziz<br><a href="tel:07700081081">07700081081</a></p><button id="loginLink">دخول المالك</button></div>
+<div class="foot"><p class="pw" dir="ltr">Powered by QAC Eng.Ali Zuhair Aziz<br><a href="tel:07700081081">07700081081</a></p><button id="loginLink">دخول الإدارة</button></div>
 
 <dialog id="cartD">
   <h2>سلة الطلب</h2>
@@ -249,6 +251,24 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
   <div class="chips" id="ctabs"></div>
   <div id="clist"></div>
   <div class="row" style="margin-top:12px"><button class="btn ghost" data-close style="flex:1">إغلاق</button></div>
+</dialog>
+
+<dialog id="stD">
+  <div class="row" style="margin-bottom:10px"><h2 style="margin:0;flex:1">الموظفين</h2><button class="btn ghost" data-close>إغلاق</button></div>
+  <div class="on" style="margin-bottom:10px">1) أنشئ المستخدم بـ Supabase ← Authentication ← Users ← Add user (إيميل + باسوورد، فعّل Auto Confirm). 2) سجّل نفس الإيميل هنا وحدد الصلاحية.</div>
+  <form id="stF">
+    <label for="stE">الإيميل</label><input id="stE" type="email" autocomplete="off" required>
+    <label for="stN">الاسم (اختياري)</label><input id="stN" maxlength="100" autocomplete="off">
+    <label for="stR">الصلاحية</label><select id="stR"><option value="accountant">محاسب — الحسابات والزبائن والأرباح</option><option value="sales">مندوب مبيعات — الطلبات فقط</option></select>
+    <div class="row" style="margin-top:12px"><button class="btn" style="flex:1">إضافة</button></div>
+  </form>
+  <div id="stL" style="margin-top:14px"></div>
+</dialog>
+
+<dialog id="actD">
+  <div class="row" style="margin-bottom:10px"><h2 style="margin:0;flex:1">سجل النشاط</h2><button class="btn ghost" data-close>إغلاق</button></div>
+  <div class="chips" id="actT" style="margin-bottom:8px;flex-wrap:wrap"></div>
+  <div id="actL"></div>
 </dialog>
 
 <dialog id="accD">
@@ -356,7 +376,7 @@ label{display:block;font-size:14px;margin:10px 0 4px;color:var(--muted)}
 </dialog>
 
 <dialog id="loginD">
-  <h2>دخول المالك</h2>
+  <h2>تسجيل الدخول</h2>
   <form id="lf">
     <label for="le">الإيميل</label><input id="le" type="email" autocomplete="username" required>
     <label for="lp">الباسوورد</label><input id="lp" type="password" autocomplete="current-password" required>
@@ -381,7 +401,7 @@ var ORD=[0,5,1,2,3,4];
 var CUR="د.ع",TITLE=document.title;
 var sb=null,configured=SUPABASE_URL.indexOf("PASTE")<0&&SUPABASE_KEY.indexOf("PASTE")<0;
 if(configured){try{sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){sb=null}}
-var isAdmin=false,loaded=false,failed="",products=[],cart={},S={b:-1,c:-1,q:""},editing=null,delArm=false;
+var role=null,isAdmin=false,loaded=false,failed="",products=[],cart={},S={b:-1,c:-1,q:""},editing=null,delArm=false;
 var orders=[],otab="new",ordCh=null;
 var ST={new:"جديدة",confirmed:"قيد التجهيز",delivered:"مسلّمة",cancelled:"ملغية"};
 var MST={new:"بانتظار التأكيد",confirmed:"قيد التجهيز",delivered:"تم التسليم",cancelled:"ملغي"};
@@ -668,6 +688,7 @@ var notified={};
 function markSeen(){orders.forEach(function(o){seen[o.id]=1});lsSet("mm-seen",Object.keys(seen).slice(-500));document.title=TITLE}
 function beep(){try{var c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.15;o.start();setTimeout(function(){o.stop();c.close()},300)}catch(e){}}
 function notifyNew(){
+  if(role!="owner"&&role!="sales")return;
   var unseen=orders.filter(function(o){return o.status=="new"&&!seen[o.id]});
   if(!unseen.length){document.title=TITLE;return}
   document.title="("+unseen.length+") "+TITLE;
@@ -728,7 +749,7 @@ function cuRender(){
     list=v.rows.length?v.rows.slice().reverse().map(function(e){
       var man=e.id!=null;
       return '<div class="ent"><div class="l1"><span><span class="tg '+(e.type=="pay"?"pay":"buy")+'">'+CL[e.type]+(e.code?' #'+esc(e.code):'')+'</span> '+dmy(e.t)+'</span><b class="'+(e.type=="pay"?"pos":"neg")+'">'+(e.type=="pay"?"−":"+")+nf(e.amt)+'</b></div><div class="nt">'+(e.note?esc(e.note)+' · ':'')+'الرصيد: '+nf(e.run)+'</div>'+
-        (man?'<div class="ac"><button class="btn ghost" data-cux="'+e.id+'">تعديل</button><button class="btn danger" data-cdl="'+e.id+'">'+(cuArm==e.id?"اضغط للتأكيد":"حذف")+'</button></div>':'')+'</div>';
+        (man&&isAdmin?'<div class="ac"><button class="btn ghost" data-cux="'+e.id+'">تعديل</button><button class="btn danger" data-cdl="'+e.id+'">'+(cuArm==e.id?"اضغط للتأكيد":"حذف")+'</button></div>':'')+'</div>';
     }).join(""):'<div class="empty">ما أكو حركات بهذه الفترة.</div>';
     list+='<div class="nt" style="margin-top:6px;color:var(--muted)">الرصيد بنهاية الفترة: <b>'+fmt(v.close)+'</b></div>';
   }
@@ -910,7 +931,7 @@ function accRender(){
 }
 function entHtml(e){
   var d=new Date(e.day+"T00:00:00").toLocaleDateString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric"});
-  return '<div class="ent"><div class="l1"><span><span class="tg '+e.kind+'">'+KL[e.kind]+'</span> '+(accV<0?'<b>'+BR[e.brand].n+'</b> · ':'')+esc(e.item||"")+(e.qty?' × '+e.qty:'')+(e.auto?' <span class="tg pay">تلقائي</span>':'')+'</span><b>'+fmt(e.amount)+'</b></div><div class="nt">'+d+(e.note?' · '+esc(e.note):'')+'</div><div class="ac"><button class="btn ghost" data-aed="'+e.id+'">تعديل</button><button class="btn danger" data-adel="'+e.id+'">'+(accArm==e.id?"اضغط للتأكيد":"حذف")+'</button></div></div>';
+  return '<div class="ent"><div class="l1"><span><span class="tg '+e.kind+'">'+KL[e.kind]+'</span> '+(accV<0?'<b>'+BR[e.brand].n+'</b> · ':'')+esc(e.item||"")+(e.qty?' × '+e.qty:'')+(e.auto?' <span class="tg pay">تلقائي</span>':'')+'</span><b>'+fmt(e.amount)+'</b></div><div class="nt">'+d+(e.note?' · '+esc(e.note):'')+'</div>'+(isAdmin?'<div class="ac"><button class="btn ghost" data-aed="'+e.id+'">تعديل</button><button class="btn danger" data-adel="'+e.id+'">'+(accArm==e.id?"اضغط للتأكيد":"حذف")+'</button></div>':'')+'</div>';
 }
 function loadLedger(){
   return sb.from("ledger").select("*").order("day",{ascending:false}).order("id",{ascending:false}).limit(2000).then(function(r){
@@ -958,11 +979,11 @@ function ordersRender(){
             o.status=="confirmed"?ab("delivered","تم التسليم","btn")+ab("cancelled","إلغاء"):
             o.status=="delivered"?ab("confirmed","رجّعه لقيد التجهيز"):ab("new","رجّعه لجديد");
     act=act.split("ID|").join(o.id+"|");
-    return '<div class="ord"><div class="oh"><b>'+esc(o.name)+'</b><span>فاتورة #'+esc(o.code)+' · '+d+'</span></div><div><a href="tel:'+esc(String(o.phone).replace(/[^0-9+]/g,""))+'">'+esc(o.phone)+'</a></div>'+itemsHtml(o.items)+(o.note?'<div class="on">'+esc(o.note)+'</div>':'')+totHtml(o)+(o.cost!=null?'<div class="ot"><span>الربح التقريبي</span><span class="'+(o.total-o.discount-o.cost<0?'neg':'pos')+'">'+fmt(o.total-o.discount-o.cost)+'</span></div>':'')+((o.status=="new"||o.status=="confirmed")?'<div class="dsc"><span>خصم</span><input type="number" min="0" step="any" inputmode="decimal" id="dv-'+o.id+'" placeholder="0" aria-label="قيمة الخصم"'+(o.discount>0?' value="'+o.discount+'"':'')+'><select id="dt-'+o.id+'" aria-label="نوع الخصم"><option value="a">د.ع</option><option value="p">%</option></select><button class="btn ghost" data-od="'+o.id+'">طبّق</button></div>':'')+'<div class="row">'+act+'</div><button class="btn ghost" data-invo="'+o.id+'" style="width:100%;margin-top:8px">فاتورة PDF</button></div>'
+    return '<div class="ord"><div class="oh"><b>'+esc(o.name)+'</b><span>فاتورة #'+esc(o.code)+' · '+d+'</span></div><div><a href="tel:'+esc(String(o.phone).replace(/[^0-9+]/g,""))+'">'+esc(o.phone)+'</a></div>'+itemsHtml(o.items)+(o.note?'<div class="on">'+esc(o.note)+'</div>':'')+totHtml(o)+(o.cost!=null?'<div class="ot"><span>الربح التقريبي</span><span class="'+(o.total-o.discount-o.cost<0?'neg':'pos')+'">'+fmt(o.total-o.discount-o.cost)+'</span></div>':'')+((isAdmin&&(o.status=="new"||o.status=="confirmed"))?'<div class="dsc"><span>خصم</span><input type="number" min="0" step="any" inputmode="decimal" id="dv-'+o.id+'" placeholder="0" aria-label="قيمة الخصم"'+(o.discount>0?' value="'+o.discount+'"':'')+'><select id="dt-'+o.id+'" aria-label="نوع الخصم"><option value="a">د.ع</option><option value="p">%</option></select><button class="btn ghost" data-od="'+o.id+'">طبّق</button></div>':'')+'<div class="row">'+act+'</div><button class="btn ghost" data-invo="'+o.id+'" style="width:100%;margin-top:8px">فاتورة PDF</button></div>'
   }).join(""):'<div class="empty">ما أكو طلبات '+ST[otab]+'.</div>';
 }
 function loadOrders(){
-  return sb.from("orders").select("*").order("created_at",{ascending:false}).limit(3000).then(function(r){
+  return (isAdmin?sb.from("orders").select("*").order("created_at",{ascending:false}).limit(3000):sb.rpc("staff_orders")).then(function(r){
     if(r.error)return;
     orders=r.data.map(mapO);ordersRender();notifyNew();cuRender();
   });
@@ -1057,7 +1078,7 @@ $("catAdd").onclick=function(){
   });
 };
 function setStatus(a){
-  sb.from("orders").update({status:a[1]}).eq("id",a[0]).then(function(r){
+  (isAdmin?sb.from("orders").update({status:a[1]}).eq("id",a[0]):sb.rpc("staff_set_status",{p_id:String(a[0]),p_status:a[1]})).then(function(r){
     if(r.error){toast("ما كدرنا نغيّر حالة الطلب. جرّب مرة ثانية.");return}
     loadOrders();
   });
@@ -1066,26 +1087,43 @@ $("ordBtn").onclick=function(){
   try{if(window.Notification&&Notification.permission=="default")Notification.requestPermission()}catch(e){}
   markSeen();ordersRender();$("ordD").showModal();
 };
+var ordTm=null;
 function setAdmin(session){
-  var was=isAdmin;isAdmin=!!session;
-  $("addBtn").hidden=!isAdmin;$("ordBtn").hidden=!isAdmin;$("consAdm").hidden=!isAdmin;$("accBtn").hidden=!isAdmin;$("cuBtn").hidden=!isAdmin;$("bkBtn").hidden=!isAdmin;$("visBtn").hidden=!isAdmin;if(isAdmin)lsSet("mm-owner",true);bkCheck();if(isAdmin)loadCosts();else costs={};
-  if(!isAdmin){custL=[];if($("cuD").open)$("cuD").close();ledger=[];if($("accD").open)$("accD").close()}
+  if(!session){applyRole(null);return}
+  sb.rpc("my_role").then(function(r){
+    var rl=r.error?"owner":r.data; /* قبل تشغيل roles.sql: السلوك القديم */
+    if(!rl){toast("هذا الحساب غير مفعّل كموظف",5000);sb.auth.signOut();return}
+    applyRole(rl);
+  });
+}
+function applyRole(rl){
+  var was=isAdmin,wasRole=role;role=rl;isAdmin=rl=="owner";
+  var logged=!!rl,sales=rl=="sales",accn=rl=="accountant";
+  $("addBtn").hidden=!isAdmin;$("ordBtn").hidden=!(isAdmin||sales);$("consAdm").hidden=!isAdmin;$("accBtn").hidden=!(isAdmin||accn);$("cuBtn").hidden=!(isAdmin||accn);$("bkBtn").hidden=!isAdmin;$("visBtn").hidden=!isAdmin;$("stBtn").hidden=!isAdmin;$("actBtn").hidden=!isAdmin;
+  if(logged)lsSet("mm-owner",true);bkCheck();if(isAdmin||accn)loadCosts();else costs={};
+  if(!logged||sales){custL=[];if($("cuD").open)$("cuD").close();ledger=[];if($("accD").open)$("accD").close()}
+  if(!isAdmin){["stD","actD"].forEach(function(k){if($(k).open)$(k).close()})}
   if(isAdmin&&!consCh){
     loadCons();
     consCh=sb.channel("cons-feed").on("postgres_changes",{event:"*",schema:"public",table:"consultations"},function(p){if(p.eventType=="INSERT"){toast("طلب استشارة جديد",6000);beep()}loadCons()}).subscribe();
   }
   if(!isAdmin&&consCh){try{sb.removeChannel(consCh)}catch(e){}consCh=null;cons=[];consNew=0;$("ccnt").hidden=true;updDot()}
-  $("loginLink").textContent=isAdmin?"تسجيل خروج المالك":"دخول المالك";
+  $("loginLink").textContent=logged?"تسجيل خروج":"دخول الإدارة";
   if(isAdmin&&!ordCh){
     loadOrders();
     ordCh=sb.channel("orders-feed").on("postgres_changes",{event:"*",schema:"public",table:"orders"},function(){loadOrders()}).subscribe();
   }
-  if(!isAdmin&&ordCh){try{sb.removeChannel(ordCh)}catch(e){}ordCh=null;orders=[];document.title=TITLE}
+  if(!isAdmin&&ordCh){try{sb.removeChannel(ordCh)}catch(e){}ordCh=null}
+  if(ordTm){clearInterval(ordTm);ordTm=null}
+  if(logged&&!isAdmin){loadOrders();ordTm=setInterval(function(){if(!document.hidden)loadOrders()},30000)}
+  if(!logged){orders=[];document.title=TITLE}
+  if(!sales&&!isAdmin&&$("ordD")&&$("ordD").open)$("ordD").close();
+  if(logged&&wasRole!==rl&&!isAdmin)toast(sales?"أهلاً بالمندوب — الطلبات من القائمة":"أهلاً بالمحاسب — الحسابات والزبائن من القائمة",5000);
   if(was!==isAdmin&&loaded){S.b<0?home():brand()}
 }
 $("loginLink").onclick=function(){
   if(!sb){toast("الموقع غير مربوط بقاعدة البيانات");return}
-  if(isAdmin){sb.auth.signOut().then(function(){toast("تم تسجيل الخروج")});return}
+  if(role){sb.auth.signOut().then(function(){toast("تم تسجيل الخروج")});return}
   $("lf").reset();$("loginD").showModal();
 };
 $("lf").addEventListener("submit",function(e){
@@ -1095,6 +1133,45 @@ $("lf").addEventListener("submit",function(e){
     $("loginD").close();toast("تم تسجيل الدخول");
   });
 });
+
+/* ---------- الموظفين وسجل النشاط (المالك) ---------- */
+var staff=[],stArm=null,actRows=[],actTab="all";
+var RL={accountant:"محاسب",sales:"مندوب مبيعات",owner:"المالك"};
+function stRender(){
+  $("stL").innerHTML=staff.length?staff.map(function(x){
+    return '<div class="ord"><div class="oh"><b>'+esc(x.name||x.email)+'</b><span>'+RL[x.role]+(x.active?'':' · موقوف')+'</span></div><div class="on" dir="ltr" style="text-align:right">'+esc(x.email)+'</div><div class="row" style="margin-top:8px"><button class="btn ghost" data-stt="'+esc(x.email)+'">'+(x.active?'إيقاف':'تفعيل')+'</button><button class="btn danger" data-std="'+esc(x.email)+'">'+(stArm==x.email?'اضغط للتأكيد':'حذف')+'</button></div></div>';
+  }).join(""):'<div class="empty">ما أكو موظفين بعد.</div>';
+}
+function loadStaff(){return sb.from("staff").select("*").order("created_at").then(function(r){if(r.error){toast("شغّل سكربت roles.sql بـ Supabase أولاً",5000);return}staff=r.data;stRender()})}
+$("stBtn").onclick=function(){menuShow(false);stArm=null;$("stF").reset();$("stD").showModal();stRender();loadStaff()};
+$("stF").addEventListener("submit",function(e){
+  e.preventDefault();
+  var em=$("stE").value.trim().toLowerCase();if(!em)return;
+  sb.from("staff").upsert({email:em,role:$("stR").value,name:$("stN").value.trim()||null,active:true}).then(function(r){
+    if(r.error){toast("ما كدرنا نضيف الموظف");return}
+    $("stF").reset();toast("تمت الإضافة");loadStaff();
+  });
+});
+function actFmt(a){return String(a.detail||"").replace(/براند #(\d+)/g,function(m,n){return BR[+n]?BR[+n].n:m}).replace(/→/g,"←")}
+var STN={new:"جديد",confirmed:"قيد التجهيز",delivered:"تم التسليم",cancelled:"ملغي"};
+function actRender(){
+  var tabs=[["all","الكل"],["accountant","المحاسب"],["sales","المندوب"],["owner","المالك"]];
+  $("actT").innerHTML=tabs.map(function(t){return '<button class="chip" aria-pressed="'+(actTab==t[0])+'" data-at="'+t[0]+'">'+t[1]+'</button>'}).join("");
+  var l=actRows.filter(function(a){return actTab=="all"||a.role==actTab});
+  $("actL").innerHTML=l.length?l.map(function(a){
+    var d=new Date(a.at).toLocaleString("en-GB",{dateStyle:"short",timeStyle:"short"});
+    var who=((staff.filter(function(x){return x.email==a.actor})[0]||{}).name)||a.actor;
+    var det=actFmt(a).replace(/: (new|confirmed|delivered|cancelled) ← (new|confirmed|delivered|cancelled)/,function(m,x,y){return ": "+STN[x]+" ← "+STN[y]});
+    return '<div class="ord"><div class="oh"><b>'+esc(who)+' <span class="tg pay">'+(RL[a.role]||"")+'</span></b><span>'+d+'</span></div><div>'+esc(det)+'</div></div>';
+  }).join(""):'<div class="empty">ما أكو نشاط بعد.</div>';
+}
+$("actBtn").onclick=function(){
+  menuShow(false);actTab="all";$("actD").showModal();actRender();
+  Promise.all([sb.from("staff").select("*"),sb.from("activity_log").select("*").order("at",{ascending:false}).limit(300)]).then(function(rs){
+    if(rs[1].error){toast("شغّل سكربت roles.sql بـ Supabase أولاً",5000);return}
+    staff=rs[0].data||[];actRows=rs[1].data;actRender();
+  });
+};
 
 /* ---------- الأحداث العامة ---------- */
 document.addEventListener("click",function(e){
@@ -1122,6 +1199,9 @@ document.addEventListener("click",function(e){
   else if(d.aadd){accOpenEntry(d.aadd,null)}
   else if(d.aed){var ae=ledger.filter(function(x){return x.id==d.aed})[0];if(ae)accOpenEntry(ae.kind,ae)}
   else if(d.adel){if(accArm!=d.adel){accArm=d.adel;accRender();return}sb.from("ledger").delete().eq("id",d.adel).then(function(r){accArm=null;r.error?toast("ما كدرنا نحذف"):(toast("تم الحذف"),loadLedger())})}
+  else if(d.stt){var sx=staff.filter(function(x){return x.email==d.stt})[0];if(sx)sb.from("staff").update({active:!sx.active}).eq("email",d.stt).then(function(r){r.error?toast("ما كدرنا نغيّر"):loadStaff()})}
+  else if(d.std){if(stArm!=d.std){stArm=d.std;stRender();return}sb.from("staff").delete().eq("email",d.std).then(function(r){stArm=null;r.error?toast("ما كدرنا نحذف"):(toast("تم الحذف"),loadStaff())})}
+  else if(d.at){actTab=d.at;actRender()}
   else if(d.ck){ctab=d.ck;cArm=null;consRender()}
   else if(d.cst){var cq=d.cst.split("|");sb.from("consultations").update({status:cq[1]}).eq("id",cq[0]).then(function(r){r.error?toast("ما كدرنا نحدّث الحالة"):loadCons()})}
   else if(d.cdel){if(cArm!=d.cdel){cArm=d.cdel;consRender();return}sb.from("consultations").delete().eq("id",d.cdel).then(function(r){cArm=null;r.error?toast("ما كدرنا نحذف"):(toast("تم الحذف"),loadCons())})}
