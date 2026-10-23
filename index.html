@@ -127,6 +127,8 @@ textarea{resize:vertical;min-height:84px}
 dialog{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:min(440px,92vw);padding:18px;max-height:88vh}
 #consD,#accD,#cuD{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border:0;border-radius:0;overflow:auto;padding:max(18px,env(safe-area-inset-top)) 18px 24px}
 textarea#cnt{min-height:96px}
+@media print{body>*{display:none!important}body>#prtHost{display:block!important;position:static!important;z-index:auto!important}}
+@page{size:A4;margin:0}
 .hpf{position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
 .acc-top{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
 .acc-box{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--surface)}
@@ -750,14 +752,28 @@ function stmtHtml(c,v){
   '<div style="display:flex;justify-content:flex-start;margin-top:16px"><div style="width:320px"><div style="display:flex;justify-content:space-between;padding:12px 14px;background:#0F1A21;color:#fff;border-radius:6px;font-size:17px;font-weight:700"><span>'+(v.close>0?"الباقي عليه":v.close<0?"الرصيد له":"الرصيد")+'</span><span dir="ltr">'+nf(Math.abs(v.close))+' '+CUR+'</span></div></div></div>'+
   '<div style="margin-top:36px;padding-top:14px;border-top:1px solid #dde4e3;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#566771"><div>للتواصل: <b dir="ltr" style="color:#0F1A21">07700081081</b></div><div dir="ltr" style="text-align:left">Powered by QAC Eng.Ali Zuhair Aziz<br>mirkado.net</div></div></div>';
 }
+function withTimeout(p,ms){return new Promise(function(res,rej){var t=setTimeout(function(){rej(new Error("timeout"))},ms);p.then(function(v){clearTimeout(t);res(v)},function(e){clearTimeout(t);rej(e)})})}
 function makePdf(html,fname){
-  toast("جاري تجهيز الملف…",8000);
-  var host=document.createElement("div");host.style.cssText="position:fixed;left:0;top:0;z-index:9998;background:#fff";host.innerHTML=html;document.body.appendChild(host);
-  var cover=document.createElement("div");cover.style.cssText="position:fixed;inset:0;z-index:9999;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px";cover.textContent="جاري تجهيز الملف…";document.body.appendChild(cover);
-  var fontsReady=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();
-  libs().then(function(){return fontsReady}).then(function(){
-    return window.html2canvas(host.firstChild,{scale:2,backgroundColor:"#ffffff",useCORS:true,scrollX:0,scrollY:0})
+  var dead=false;
+  var host=document.createElement("div");host.id="prtHost";host.style.cssText="position:fixed;left:0;top:0;z-index:9998;background:#fff";host.innerHTML=html;document.body.appendChild(host);
+  var cover=document.createElement("div");cover.style.cssText="position:fixed;inset:0;z-index:9999;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-weight:700;font-size:18px;padding:20px;text-align:center";
+  cover.innerHTML='<div id="pdfMsg">جاري تجهيز الملف…</div><div class="row" id="pdfBtns"><button class="btn ghost" id="pdfX">إلغاء</button></div>';
+  document.body.appendChild(cover);
+  function close(){dead=true;host.remove();cover.remove()}
+  document.getElementById("pdfX").onclick=close;
+  function fallback(){
+    if(dead)return;
+    document.getElementById("pdfMsg").textContent="ما كدرنا نسوي الملف تلقائياً. تكدر تحفظه من الطباعة: اضغط الزر، وبعدها اختار مشاركة ثم حفظ في الملفات.";
+    document.getElementById("pdfBtns").innerHTML='<button class="btn" id="pdfP">طباعة / حفظ PDF</button><button class="btn ghost" id="pdfC">إغلاق</button>';
+    document.getElementById("pdfC").onclick=close;
+    document.getElementById("pdfP").onclick=function(){try{window.print()}catch(e){toast("الطباعة غير مدعومة بهذا المتصفح")}};
+  }
+  var fontsReady=document.fonts&&document.fonts.ready?withTimeout(document.fonts.ready,2500).catch(function(){}):Promise.resolve();
+  withTimeout(libs(),20000).then(function(){return fontsReady}).then(function(){
+    if(dead)throw new Error("cancelled");
+    return withTimeout(window.html2canvas(host.firstChild,{scale:2,backgroundColor:"#ffffff",useCORS:true,scrollX:0,scrollY:0,logging:false,imageTimeout:4000}),25000)
   }).then(function(cv){
+    if(dead)return;
     var J=window.jspdf.jsPDF,pdf=new J({unit:"pt",format:"a4",orientation:"portrait"});
     var pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
     var ih=cv.height*pw/cv.width,pages=Math.max(1,Math.ceil(ih/ph-0.001)),sliceH=Math.floor(cv.width*ph/pw);
@@ -767,8 +783,8 @@ function makePdf(html,fname){
       if(p)pdf.addPage();
       pdf.addImage(part.toDataURL("image/jpeg",.92),"JPEG",0,0,pw,part.height*pw/cv.width);
     }
-    pdf.save(fname);toast("تم تجهيز الكشف");
-  }).catch(function(){toast("ما كدرنا نسوي الملف. تأكد من الإنترنت وجرّب مرة ثانية.",5000)}).then(function(){host.remove();cover.remove()});
+    pdf.save(fname);close();toast("تم تجهيز الملف");
+  }).catch(function(){fallback()});
 }
 function cuPdf(){
   var c=cuBuild()[cuK];if(!c)return;
@@ -927,7 +943,7 @@ function setDiscount(id){
 }
 
 /* ---------- الفاتورة PDF ---------- */
-function loadLib(src){return new Promise(function(res,rej){var el=document.createElement("script");el.src=src;el.onload=res;el.onerror=rej;document.head.appendChild(el)})}
+function loadLib(src){return new Promise(function(res,rej){var el=document.createElement("script");el.src=src;el.onload=res;el.onerror=function(){el.remove();rej(new Error("load"))};document.head.appendChild(el)})}
 function libs(){
   var a=window.html2canvas?Promise.resolve():loadLib("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
   return a.then(function(){return window.jspdf?0:loadLib("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")});
@@ -960,7 +976,7 @@ function invoiceHtml(v){
   '<div style="margin-top:44px;padding-top:16px;border-top:1px solid #dde4e3;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#566771"><div>شكراً لتعاملكم معنا<br>للتواصل: <b dir="ltr" style="color:#0F1A21">07700081081</b></div><div dir="ltr" style="text-align:left">Powered by QAC Eng.Ali Zuhair Aziz<br>mirkado.net</div></div>'+
   '</div>';
 }
-function invoicePdf(key,owner,share){
+function invoicePdf(key,owner){
   var v=null;
   if(owner){
     var o=orders.filter(function(x){return x.id==key})[0];
@@ -973,35 +989,7 @@ function invoicePdf(key,owner,share){
   }
   if(!v){toast("ما لقينا الفاتورة");return}
   if(!owner&&v.status!="confirmed"&&v.status!="delivered"){toast("الفاتورة تتوفر بعد تأكيد الطلب");return}
-  toast("جاري تجهيز الفاتورة…",8000);
-  var host=document.createElement("div");host.style.cssText="position:fixed;left:0;top:0;z-index:9998;background:#fff";host.innerHTML=invoiceHtml(v);document.body.appendChild(host);
-  var cover=document.createElement("div");cover.style.cssText="position:fixed;inset:0;z-index:9999;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px";cover.textContent="جاري تجهيز الفاتورة…";document.body.appendChild(cover);
-  var fontsReady=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();
-  libs().then(function(){return fontsReady}).then(function(){
-    return window.html2canvas(host.firstChild,{scale:2,backgroundColor:"#ffffff",useCORS:true,scrollX:0,scrollY:0})
-  }).then(function(cv){
-    var J=window.jspdf.jsPDF,pdf=new J({unit:"pt",format:"a4",orientation:"portrait"});
-    var pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
-    var ih=cv.height*pw/cv.width,pages=Math.max(1,Math.ceil(ih/ph-0.001));
-    var sliceH=Math.floor(cv.width*ph/pw);
-    for(var p=0;p<pages;p++){
-      var part=document.createElement("canvas");part.width=cv.width;part.height=Math.min(sliceH,cv.height-p*sliceH);
-      var cx=part.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,part.width,part.height);cx.drawImage(cv,0,p*sliceH,cv.width,part.height,0,0,cv.width,part.height);
-      if(p)pdf.addPage();
-      pdf.addImage(part.toDataURL("image/jpeg",.92),"JPEG",0,0,pw,part.height*pw/cv.width);
-    }
-    var fname="Invoice-"+v.code+".pdf";
-    if(share){
-      var file=new File([pdf.output("blob")],fname,{type:"application/pdf"});
-      host.remove();
-      if(!(navigator.canShare&&navigator.canShare({files:[file]}))){pdf.save(fname);toast("جهازك ما يدعم الإرسال المباشر. نزّلنا الفاتورة، أرسلها من الملفات.",6000);cover.remove();return}
-      cover.style.flexDirection="column";cover.style.gap="12px";cover.innerHTML='<div style="font-weight:800;font-size:18px">الفاتورة جاهزة</div><button class="btn" id="shGo" style="min-width:220px">اضغط للإرسال (اختر واتساب)</button><button class="btn ghost" id="shNo" style="min-width:220px">إغلاق</button>';
-      document.getElementById("shNo").onclick=function(){cover.remove()};
-      document.getElementById("shGo").onclick=function(){navigator.share({files:[file],title:fname}).catch(function(){}).then(function(){cover.remove()})};
-      return;
-    }
-    pdf.save(fname);toast("تم تجهيز الفاتورة");
-  }).catch(function(){toast("ما كدرنا نسوي الفاتورة. تأكد من الإنترنت وجرّب مرة ثانية.",5000);cover.remove()}).then(function(){host.remove();if(!share)cover.remove()});
+  makePdf(invoiceHtml(v),"Invoice-"+v.code+".pdf");
 }
 var catArm=null;
 function catRender(){
@@ -1084,7 +1072,6 @@ document.addEventListener("click",function(e){
   else if(d.od){setDiscount(d.od)}
   else if(d.inv){invoicePdf(d.inv,false)}
   else if(d.invo){invoicePdf(d.invo,true)}
-  else if(d.invs){invoicePdf(d.invs,true,true)}
   else if(d.wasend!==undefined){waOrder()}
   else if(d.cu!==undefined){cuK=d.cu;cuArm=null;cuRender();$("cuD").scrollTo(0,0)}
   else if(d.cuback!==undefined){cuK=null;cuArm=null;cuRender()}
